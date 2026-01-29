@@ -1,0 +1,46 @@
+## --- PHẦN CỐT LÕI (BẮT BUỘC) ---
+# Chặn thư mục build (dùng [Bb] để chặn cả viết hoa viết thường)
+[Bb]in/
+[Oo]bj/
+
+# Chặn thư mục cấu hình tạm của Visual Studio
+.vs/
+.vscode/
+
+## --- CÁC FILE CẤU HÌNH NGƯỜI DÙNG (USER SPECIFIC) ---
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+## --- FILE RÁC HỆ THỐNG & DEBUG ---
+# File log và crash dump
+*.log
+*.dmp
+*.stackdump
+
+# File tạm của Windows (Thumbnails)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## --- NUGET PACKAGES ---
+# Chỉ chặn thư mục packages, giữ lại file cấu hình
+packages/
+!packages/build/
+*.nupkg
+
+## --- SQL SERVER (NẾU CÓ DÙNG LOCAL DB) ---
+*.mdf
+*.ldf
+
+## --- CÁC FILE TẠM KHÁC ---
+# Resharper (nếu có cài)
+_ReSharper*/
+*.ReSharper
+
+# Test results
+TestResults/
+*.trdx
+Skynet-Cyber-Station/Skynet-Cyber-Station/Skynet-Cyber-Station.csproj
