@@ -1,0 +1,27 @@
+# Visual Studio cache & options
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results (Rác khi chạy code)
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+build/
+Debug/
+Release/
+
+# NuGet Packages
+*.nupkg
+packages/
+!packages/build/
+
+# SQL Server (Nếu có file database tạm)
+*.mdf
+*.ldf
+
+# Logs
+*.log
