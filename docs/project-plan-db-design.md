@@ -15,6 +15,413 @@
 - Quản lý tập trung thông tin phòng máy và thiết bị
 - Quản lý lịch cho thuê / sử dụng phòng máy
 - Tránh trùng lịch, sử dụng không hiệu quả
+- Theo dõi tình trạng phòng máy, thiết bị
+- Hỗ trợ thống kê, báo cáo phục vụ quản lý
+
+---
+
+## 3. Phạm vi nghiệp vụ (Business Scope)
+
+### 3.1 Trong phạm vi
+- Quản lý phòng máy
+- Quản lý người thuê (giảng viên, sinh viên, đơn vị)
+- Đặt lịch thuê phòng
+- Phê duyệt / hủy lịch thuê
+- Thống kê, báo cáo
+
+### 3.2 Ngoài phạm vi
+- Thanh toán trực tuyến
+- Quản lý tài chính kế toán chi tiết
+- Bảo trì phần cứng chuyên sâu
+
+---
+
+## 4. Stakeholders & Actors
+
+| Nhóm | Vai trò |
+|----|----|
+| Ban quản lý | Quyết định, phê duyệt |
+| Quản trị viên | Quản lý hệ thống |
+| Giảng viên | Đăng ký thuê phòng |
+| Sinh viên | Đăng ký thuê phòng |
+| Kỹ thuật viên | Theo dõi tình trạng phòng |
+
+---
+
+## 5. Phân tích nghiệp vụ (Business Analysis)
+
+### 5.1 Vấn đề hiện tại (As-Is)
+- Quản lý bằng Excel / giấy tờ
+- Dễ trùng lịch phòng
+- Khó tổng hợp báo cáo
+- Không theo dõi được lịch sử sử dụng
+
+### 5.2 Nhu cầu nghiệp vụ (Business Needs)
+- Hệ thống tập trung
+- Tra cứu lịch phòng theo thời gian thực
+- Quản lý trạng thái phòng
+- Lưu vết lịch sử sử dụng
+
+---
+
+## 6. Quy trình nghiệp vụ chi tiết (To-Be – Business Process)
+
+### 6.1 Quy trình đăng ký và sử dụng phòng máy (End-to-End)
+
+```
+[Người dùng] → [Đăng nhập] → [Tìm kiếm phòng] → [Đăng ký thuê]
+                                        ↓
+                              [Hệ thống tạo yêu cầu]
+                                        ↓
+                              [Gửi thông báo Admin]
+                                        ↓
+[Admin] → [Xem danh sách yêu cầu] → [Xét duyệt]
+                            ↓           ↓
+                        [Phê duyệt]  [Từ chối]
+                            ↓           ↓
+                    [Khóa lịch phòng]  [Thông báo lý do]
+                            ↓
+                    [Thông báo người dùng]
+                            ↓
+[Người dùng] → [Đến phòng đúng giờ] → [Check-in bằng QR]
+                            ↓
+                    [Hệ thống xác nhận] → [Sử dụng phòng]
+                                        ↓
+                    [Kết thúc] → [Check-out] → [Đánh giá]
+                                        ↓
+                    [Hệ thống cập nhật] → [Giải phóng phòng]
+                                        ↓
+                              [Lưu lịch sử & Thống kê]
+```
+
+### 6.2 Quy trình chi tiết từng bước
+
+#### Bước 1: Đăng nhập và xác thực
+- **Input:** Username, Password
+- **Xử lý:** kiểm tra tài khoản, mật khẩu, trạng thái, tạo JWT
+- **Output:** Token, Thông tin user, Quyền hạn
+
+#### Bước 2: Tìm kiếm phòng khả dụng
+- **Input:** Ngày, Ca, Số lượng máy cần, Bộ lọc
+- **Xử lý:** loại phòng trùng lịch, phòng bảo trì
+- **Output:** Danh sách phòng khả dụng
+
+#### Bước 3: Tạo yêu cầu thuê phòng
+- **Input:** phòng, ngày, ca, mục đích, số người, yêu cầu đặc biệt
+- **Validate:** thời gian đăng ký trước, không trùng lịch, giới hạn số yêu cầu
+- **Output:** Booking ID, trạng thái "Pending"
+
+#### Bước 4: Phê duyệt yêu cầu
+- **Input:** Booking ID, Approve/Reject
+- **Xử lý:** cập nhật trạng thái, khóa lịch phòng, gửi thông báo
+
+#### Bước 5: Check-in
+- **Input:** QR code/Booking code
+- **Xử lý:** kiểm tra hợp lệ, cập nhật trạng thái "In Use"
+
+#### Bước 6: Sử dụng & báo cáo sự cố
+- Ghi nhận sự cố trong bảng Issues
+
+#### Bước 7: Check-out
+- **Output:** hoàn thành booking, giải phóng phòng
+
+#### Bước 8: Hủy lịch (Optional)
+- **Xử lý:** cập nhật trạng thái "Cancelled", trừ điểm uy tín
+
+---
+
+## 7. Kế hoạch kỹ nghiệp vụ (Business Plan)
+
+### 7.1 Các Use Case chi tiết
+
+#### UC01: Quản lý phòng máy
+**Mô tả:** Quản trị viên quản lý thông tin phòng máy  
+**Actor:** Quản trị viên  
+**Luồng chính:**
+1. Đăng nhập với quyền quản trị viên
+2. Truy cập module quản lý phòng máy
+3. Thực hiện các thao tác:
+    - Thêm phòng máy mới (mã phòng, tên, tầng, tòa nhà, sức chứa, mô tả)
+    - Sửa thông tin phòng máy
+    - Vô hiệu hóa/Kích hoạt phòng máy
+    - Xem danh sách phòng máy (filter, search, pagination)
+    - Xem chi tiết phòng máy và danh sách máy tính trong phòng
+4. Hệ thống lưu thông tin và hiển thị kết quả
+
+**Luồng thay thế:**
+- A1: Mã phòng đã tồn tại → Thông báo lỗi
+- A2: Phòng đang có lịch thuê → Không cho phép vô hiệu hóa
+
+**Tiền điều kiện:** Người dùng đã đăng nhập với quyền quản trị viên  
+**Hậu điều kiện:** Dữ liệu phòng máy được cập nhật trong hệ thống
+
+---
+
+#### UC02: Quản lý máy tính trong phòng
+**Mô tả:** Quản lý chi tiết từng máy tính trong phòng  
+**Actor:** Quản trị viên, Kỹ thuật viên  
+**Luồng chính:**
+1. Chọn phòng máy cần quản lý
+2. Xem danh sách máy tính trong phòng
+3. Thực hiện thao tác:
+    - Thêm máy tính (số hiệu, cấu hình CPU, RAM, HDD, monitor, trạng thái)
+    - Sửa thông tin máy tính
+    - Cập nhật trạng thái (Hoạt động tốt/Đang bảo trì/Hỏng hóc)
+    - Ghi chú sự cố
+4. Hệ thống cập nhật và thông báo
+
+**Business Rules:**
+- Số lượng máy trong phòng không vượt quá sức chứa
+- Khi số máy hỏng > 30% tổng số máy → Phòng tự động chuyển trạng thái "Cần bảo trì"
+
+---
+
+#### UC03: Đăng ký thuê phòng
+**Mô tả:** Người dùng đăng ký thuê phòng máy  
+**Actor:** Giảng viên, Sinh viên  
+**Luồng chính:**
+1. Đăng nhập hệ thống
+2. Truy cập chức năng "Đặt phòng"
+3. Chọn tiêu chí tìm kiếm:
+    - Ngày thuê
+    - Ca sử dụng (Sáng 7h-11h, Chiều 13h-17h, Tối 18h-21h)
+    - Số lượng máy cần
+    - Tòa nhà/Tầng (tùy chọn)
+4. Hệ thống hiển thị danh sách phòng khả dụng
+5. Chọn phòng và điền thông tin:
+    - Mục đích sử dụng (Học tập/Thi cử/Nghiên cứu/Sự kiện)
+    - Số lượng người dự kiến
+    - Yêu cầu phần mềm đặc biệt (nếu có)
+    - Ghi chú bổ sung
+6. Xác nhận đăng ký
+7. Hệ thống tạo yêu cầu với trạng thái "Chờ duyệt"
+8. Gửi email thông báo cho người đăng ký và quản trị viên
+
+**Luồng thay thế:**
+- A1: Không có phòng trống → Hiển thị thông báo, đề xuất ca/ngày khác
+- A2: Vi phạm quy định đăng ký trước tối thiểu → Thông báo lỗi
+- A3: Người dùng đã có lịch trùng giờ → Cảnh báo xung đột
+
+**Tiền điều kiện:** 
+- Người dùng đã xác thực tài khoản
+- Tài khoản không bị khóa
+
+**Hậu điều kiện:** 
+- Yêu cầu thuê phòng được tạo trong hệ thống
+- Thông báo được gửi đến các bên liên quan
+
+---
+
+#### UC04: Phê duyệt/Từ chối yêu cầu thuê phòng
+**Mô tả:** Quản trị viên xét duyệt yêu cầu  
+**Actor:** Quản trị viên  
+**Luồng chính:**
+1. Đăng nhập với quyền quản trị viên
+2. Xem danh sách yêu cầu chờ duyệt
+3. Xem chi tiết yêu cầu:
+    - Thông tin người đăng ký
+    - Lịch sử thuê phòng của người này
+    - Thông tin phòng và thời gian
+    - Mục đích sử dụng
+4. Quyết định:
+    - **Phê duyệt:** Yêu cầu chuyển sang "Đã duyệt", phòng bị khóa lịch
+    - **Từ chối:** Nhập lý do từ chối, yêu cầu chuyển sang "Đã từ chối"
+5. Hệ thống gửi email thông báo kết quả cho người đăng ký
+6. Cập nhật lịch phòng
+
+**Business Rules:**
+- Yêu cầu phải được xử lý trong vòng 24h
+- Quá 24h không xử lý → Tự động chuyển sang "Hết hạn"
+- Giảng viên được ưu tiên duyệt hơn sinh viên trong trường hợp xung đột
+
+---
+
+#### UC05: Hủy lịch đã đăng ký
+**Mô tả:** Người dùng hoặc quản trị viên hủy lịch đã đặt  
+**Actor:** Giảng viên, Sinh viên, Quản trị viên  
+**Luồng chính:**
+1. Truy cập "Lịch của tôi"
+2. Chọn lịch cần hủy (trạng thái "Đã duyệt" hoặc "Chờ duyệt")
+3. Nhấn "Hủy lịch", nhập lý do
+4. Xác nhận hủy
+5. Hệ thống:
+    - Cập nhật trạng thái thành "Đã hủy"
+    - Giải phóng lịch phòng
+    - Gửi thông báo cho các bên liên quan
+
+**Business Rules:**
+- Chỉ được hủy trước thời gian sử dụng tối thiểu 2 giờ
+- Hủy quá 3 lần trong tháng → Tài khoản bị cảnh cáo
+- Quản trị viên có thể hủy bất kỳ lúc nào với lý do hợp lệ
+
+---
+
+#### UC06: Check-in/Check-out phòng máy
+**Mô tả:** Xác nhận sử dụng phòng thực tế  
+**Actor:** Giảng viên, Sinh viên, Kỹ thuật viên  
+**Luồng chính:**
+1. **Check-in:**
+    - Người dùng đến phòng đúng giờ
+    - Quét QR code tại phòng hoặc nhập mã phòng
+    - Hệ thống xác nhận lịch hợp lệ
+    - Trạng thái chuyển "Đang sử dụng"
+    - Ghi nhận thời gian check-in thực tế
+
+2. **Check-out:**
+    - Khi kết thúc, người dùng check-out
+    - Đánh giá tình trạng phòng máy (tốt/có sự cố)
+    - Ghi chú sự cố nếu có
+    - Hệ thống ghi nhận thời gian check-out
+    - Trạng thái chuyển "Hoàn thành"
+
+**Luồng thay thế:**
+- A1: Đến muộn quá 15 phút không check-in → Lịch tự động hủy
+- A2: Không check-out → Sau thời gian kết thúc + 30 phút tự động check-out
+
+---
+
+#### UC07: Báo cáo sự cố thiết bị
+**Mô tả:** Người dùng báo cáo sự cố trong quá trình sử dụng  
+**Actor:** Giảng viên, Sinh viên, Kỹ thuật viên  
+**Luồng chính:**
+1. Trong phiên sử dụng, phát hiện sự cố
+2. Truy cập "Báo cáo sự cố"
+3. Chọn máy/thiết bị gặp sự cố
+4. Mô tả sự cố (text, upload ảnh)
+5. Đánh giá mức độ (Nhẹ/Trung bình/Nghiêm trọng)
+6. Gửi báo cáo
+7. Hệ thống:
+    - Tạo ticket sự cố
+    - Thông báo cho kỹ thuật viên
+    - Cập nhật trạng thái thiết bị nếu nghiêm trọng
+
+---
+
+#### UC08: Xem lịch sử sử dụng
+**Mô tả:** Xem lịch sử thuê phòng của bản thân hoặc toàn hệ thống  
+**Actor:** Tất cả người dùng, Quản trị viên  
+**Luồng chính:**
+1. Truy cập "Lịch sử"
+2. **Người dùng thường:** Xem lịch sử của bản thân
+3. **Quản trị viên:** Xem toàn bộ, filter theo:
+    - Người dùng
+    - Phòng máy
+    - Khoảng thời gian
+    - Trạng thái
+4. Xuất báo cáo Excel/PDF
+
+---
+
+#### UC09: Thống kê và báo cáo
+**Mô tả:** Tạo các báo cáo phân tích  
+**Actor:** Quản trị viên, Ban quản lý  
+**Các loại báo cáo:**
+1. **Báo cáo sử dụng phòng máy:**
+    - Tỷ lệ sử dụng theo phòng
+    - Phòng hot nhất/ít dùng nhất
+    - Biểu đồ sử dụng theo thời gian
+
+2. **Báo cáo người dùng:**
+    - Top người dùng thuê nhiều nhất
+    - Tỷ lệ hủy lịch
+    - Điểm uy tín người dùng
+
+3. **Báo cáo thiết bị:**
+    - Tình trạng thiết bị
+    - Tần suất sự cố
+    - Chi phí bảo trì (nếu có)
+
+4. **Báo cáo theo mục đích:**
+    - Phân bổ theo mục đích sử dụng
+    - Thời gian sử dụng trung bình
+
+**Output:** Dashboard, Excel, PDF
+
+---
+
+### 7.2 Business Rules chi tiết
+
+#### Quy định về thời gian
+1. **Thời gian đăng ký trước:**
+    - Sinh viên: Tối thiểu 24 giờ trước
+    - Giảng viên: Tối thiểu 4 giờ trước
+    - Khẩn cấp: Quản trị viên có thể đăng ký ngay lập tức
+
+2. **Khung giờ hoạt động:**
+    - Ca sáng: 7:00 - 11:00
+    - Ca chiều: 13:00 - 17:00
+    - Ca tối: 18:00 - 21:00
+    - Ngoài giờ: Cần phê duyệt đặc biệt
+
+3. **Thời gian sử dụng tối đa:**
+    - Sinh viên: Tối đa 4 giờ/lần, không quá 12 giờ/tuần
+    - Giảng viên: Không giới hạn
+    - Sự kiện: Tối đa 8 giờ/lần
+
+#### Quy định về xung đột và ưu tiên
+4. **Xử lý xung đột lịch:**
+    - Ưu tiên 1: Thi cử chính thức
+    - Ưu tiên 2: Giảng viên giảng dạy
+    - Ưu tiên 3: Nghiên cứu khoa học
+    - Ưu tiên 4: Học tập cá nhân/nhóm
+    - Ưu tiên 5: Sự kiện ngoại khóa
+
+5. **Đăng ký trùng lịch:**
+    - Không cho phép 1 người đăng ký nhiều phòng cùng ca
+    - Không cho phép 1 phòng có nhiều lịch trùng ca
+    - Có thể đặt lịch liên tục nhiều ca
+
+#### Quy định về trạng thái và hành vi
+6. **Trạng thái phòng máy:**
+    - "Sẵn sàng": Phòng hoạt động bình thường, có thể đặt
+    - "Đang sử dụng": Có người đang dùng
+    - "Bảo trì": Không cho phép đặt mới
+    - "Ngừng hoạt động": Vô hiệu hóa hoàn toàn
+
+7. **Hệ thống điểm uy tín:**
+    - Mỗi user có điểm uy tín ban đầu: 100
+    - Hủy lịch đúng quy định: -2 điểm
+    - Hủy lịch trễ (< 2 giờ): -5 điểm
+    - No-show (không đến): -10 điểm
+    - Hoàn thành tốt: +1 điểm
+    - Điểm < 50: Tạm khóa tài khoản, cần liên hệ admin
+
+8. **Giới hạn đăng ký:**
+    - Sinh viên: Tối đa 3 lịch "Chờ duyệt" cùng lúc
+    - Giảng viên: Tối đa 10 lịch "Chờ duyệt" cùng lúc
+    - Không được đặt quá 30 ngày trong tương lai
+
+#### Quy định về phê duyệt
+9. **Tự động phê duyệt:**
+    - Giảng viên + mục đích "Giảng dạy" + đúng lịch học → Tự động duyệt
+    - Các trường hợp khác: Cần quản trị viên duyệt thủ công
+
+10. **Quá hạn xử lý:**
+     - Yêu cầu > 24h không xử lý → Chuyển "Hết hạn"
+     - Yêu cầu < 4h tới giờ sử dụng → Ưu tiên xử lý
+
+#### Quy định về thiết bị
+11. **Điều kiện phòng khả dụng:**
+     - Số máy hoạt động tốt >= 80% tổng số máy
+     - Có ít nhất 1 máy chiếu hoạt động
+     - Điều hòa/quạt hoạt động (theo mùa)
+
+12. **Bảo trì định kỳ:**
+     - Mỗi phòng bảo trì 1 lần/tháng
+     - Trong thời gian bảo trì: Không cho đặt lịch
+     - Thông báo lịch bảo trì trước 7 ngày
+
+#### Quy định về dữ liệu
+13. **Lưu trữ:**
+     - Lịch sử sử dụng: Lưu vĩnh viễn
+     - Log hệ thống: Lưu 12 tháng
+     - Yêu cầu "Đã từ chối"/"Hết hạn": Lưu 6 tháng
+
+14. **Quyền truy cập dữ liệu:**
+     - Sinh viên/Giảng viên: Chỉ xem dữ liệu của mình
+     - Kỹ thuật viên: Xem dữ liệu thiết bị và sự cố
+     - Quản trị viên: Xem toàn bộ
+     - Ban quản lý: Xem báo cáo tổng hợp
 ## 8. Kế hoạch kỹ thuật mở rộng (Technical Plan)
 
 ### 8.1 Kiến trúc cơ bản phổ biến
@@ -640,13 +1047,7 @@ END;
 - **Issues:** Index trên (status, severity) → Dashboard kỹ thuật viên
 - **Notifications:** Index trên (user_id, is_read, created_at) → Load thông báo chưa đọc
 
-### 9.8 Backup Strategy
-
-1. **Full Backup:** Hàng ngày vào 2:00 AM
-2. **Incremental Backup:** Mỗi 6 giờ
-3. **Transaction Log Backup:** Mỗi giờ
-4. **Retention:** Giữ 30 ngày
-5. **Test Restore:** Hàng tuần
 ---
-## Kết luận
+
+## 12. Kết luận
 Hệ thống quản lý cho thuê phòng máy giúp nâng cao hiệu quả sử dụng tài nguyên, giảm sai sót thủ công và hỗ trợ công tác quản lý trong môi trường giáo dục.
