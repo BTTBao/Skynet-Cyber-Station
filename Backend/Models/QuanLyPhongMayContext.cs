@@ -32,7 +32,7 @@ public partial class QuanLyPhongMayContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-
+        //=> optionsBuilder.UseSqlServer("Data Source=DESKTOP-9E807K6;Initial Catalog=QuanLyPhongMay;Integrated Security=True;Trust Server Certificate=True");
         => optionsBuilder.UseSqlServer("Server=localhost;Initial Catalog=QuanLyPhongMay;Integrated Security=True;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

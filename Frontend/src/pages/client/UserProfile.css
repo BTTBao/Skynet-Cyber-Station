@@ -1,0 +1,381 @@
+:root {
+  --primary: #1a237e;
+  --primary-light: #534bae;
+  --bg-body: #f3f4f6;
+  --bg-card: #ffffff;
+  --text-main: #1f2937;
+  --text-secondary: #6b7280;
+  --border-radius: 12px;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --transition: all 0.2s ease;
+  
+  /* Status Colors */
+  --status-pending: #f59e0b;
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-body);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+}
+
+.profile-wrapper {
+  padding: 40px 20px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  /* Giữ chiều cao container ổn định để tránh layout shift */
+  align-items: start;
+}
+
+/* --- Common Card Styles --- */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Left Sidebar --- */
+.sidebar-card {
+  padding-bottom: 20px;
+  /* Sidebar nên tự co giãn theo nội dung của nó */
+  height: auto; 
+}
+
+.banner {
+  height: 90px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.avatar-wrapper {
+  width: 100px;
+  height: 100px;
+  margin: -50px auto 10px;
+  position: relative;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid white;
+  object-fit: cover;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-text {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.user-name {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.user-role {
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin: 4px 0;
+}
+
+/* --- Menu Navigation --- */
+.menu-nav {
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.menu-item:hover {
+  background-color: #f3f4f6;
+  color: var(--primary);
+}
+
+.menu-item.active {
+  background-color: #e0e7ff;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.menu-item svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* --- Stats Widgets --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.stat-box {
+  background: white;
+  padding: 15px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid #eee;
+}
+
+.stat-num {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* --- Main Content Area (FIXED LAYOUT SHIFT) --- */
+.content-card {
+  /* QUAN TRỌNG: Cố định chiều cao. 
+     680px là chiều cao đủ đẹp để khớp với sidebar + stats 
+  */
+  height: 680px; 
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0; /* Header không bị co lại */
+  background-color: #fff;
+}
+
+.header-title {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-body {
+  padding: 30px;
+  flex: 1; /* Chiếm toàn bộ không gian còn lại */
+  
+  /* QUAN TRỌNG: Nếu nội dung dài hơn chiều cao cố định,
+     chỉ khu vực body này xuất hiện thanh cuộn,
+     không làm vỡ layout chính.
+  */
+  overflow-y: auto; 
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp (Webkit browsers) */
+.card-body::-webkit-scrollbar {
+  width: 8px;
+}
+.card-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.card-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+.card-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* --- Form Styles --- */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.input-field:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  width: 18px;
+}
+
+.btn-save {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+  float: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-save:hover {
+  background: var(--primary-light);
+}
+
+/* --- Data Tables --- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 12px;
+  background-color: #f9fafb;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky; /* Giữ tiêu đề bảng khi cuộn */
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-main);
+}
+
+.data-table tr:hover {
+  background-color: #fdfdfd;
+}
+
+/* --- Badges --- */
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.status-pending, 
+.status-unpaid {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.status-active, 
+.status-approved, 
+.status-paid, 
+.status-resolved {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.status-rejected, 
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.status-processing {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .profile-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .content-card {
+    height: auto; /* Trên mobile thì để tự do */
+    min-height: 500px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .full-width {
+    grid-column: span 1;
+  }
+}
