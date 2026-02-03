@@ -16,7 +16,7 @@ const Login = ({ onLogin }) => {
     setIsLoading(true)
 
     try {
-      const API_URL = "https://localhost:7140/api/Users/login";
+      const API_URL = "https://localhost:7140/api/client/Users/login";
 
       const response = await fetch(API_URL, {
         method: "POST",

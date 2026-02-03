@@ -1,8 +1,7 @@
 import React from "react"
 import { CheckCircle2, Sparkles } from "lucide-react"
-import { MOCK_ROOMS } from "../../data/constants"
 
-export const ReportsView = ({ reports }) => {
+export const ReportsView = ({ reports, rooms = [] }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="bg-[#271756]/5 border border-[#271756]/10 p-4 rounded-xl flex gap-3">
@@ -27,7 +26,7 @@ export const ReportsView = ({ reports }) => {
                 </div>
             ) : (
                 reports.map(report => {
-                    const room = MOCK_ROOMS.find(r => r.id === report.roomId)
+                    const room = rooms.find(r => r.id === report.roomId)
                     return (
                         <div
                             key={report.id}
@@ -39,10 +38,10 @@ export const ReportsView = ({ reports }) => {
                                         {room?.name}
                                         <span
                                             className={`ml-3 px-2 py-0.5 rounded text-xs uppercase ${report.severity === "HIGH"
-                                                    ? "bg-red-100 text-red-700"
-                                                    : report.severity === "MEDIUM"
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : "bg-blue-100 text-blue-700"
+                                                ? "bg-red-100 text-red-700"
+                                                : report.severity === "MEDIUM"
+                                                    ? "bg-amber-100 text-amber-700"
+                                                    : "bg-blue-100 text-blue-700"
                                                 }`}
                                         >
                                             {report.severity === "HIGH"

@@ -113,4 +113,6 @@ export const MOCK_ROOMS = [
     }
 ]
 
-export const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => i + 7) // 7:00 to 20:00
+export const TIME_SLOTS = [
+    7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+];

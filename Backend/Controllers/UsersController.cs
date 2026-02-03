@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/client/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {

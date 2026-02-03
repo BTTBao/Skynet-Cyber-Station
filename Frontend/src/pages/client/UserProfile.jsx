@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './UserProfile.css';
 
 // --- Cấu hình API URL ---
-const API_BASE_URL = "https://localhost:7140/api"; 
+const API_BASE_URL = "https://localhost:7140/api/client";
 
 // --- Icon SVG ---
 const Icons = {
@@ -33,9 +33,9 @@ const UserProfile = ({ userId }) => {
 
   // --- 1. Fetch Data ---
   useEffect(() => {
-    if (!userId) return; 
+    if (!userId) return;
 
-    fetch(`${API_BASE_URL}/Users/${userId}`) 
+    fetch(`${API_BASE_URL}/Users/${userId}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Không thể tải dữ liệu người dùng.');
@@ -55,8 +55,8 @@ const UserProfile = ({ userId }) => {
 
   // --- 2. Xử lý Update Info ---
   const handleSave = async (e) => {
-    e.preventDefault(); 
-    
+    e.preventDefault();
+
     const updateData = {
       fullName: user.fullName,
       email: user.email,
@@ -92,8 +92,8 @@ const UserProfile = ({ userId }) => {
       return;
     }
     if (passwordData.newPassword.length < 6) {
-        alert("❌ Mật khẩu mới phải có ít nhất 6 ký tự!");
-        return;
+      alert("❌ Mật khẩu mới phải có ít nhất 6 ký tự!");
+      return;
     }
 
     // Payload gửi đi (Bạn cần kiểm tra Backend nhận model gì)
@@ -133,25 +133,25 @@ const UserProfile = ({ userId }) => {
   };
 
   const handlePasswordInput = (e) => {
-      const { name, value } = e.target;
-      setPasswordData(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target;
+    setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
   const renderStatusBadge = (status) => {
     let className = 'badge ';
     const s = status?.toLowerCase() || '';
-    
+
     if (['approved', 'paid', 'resolved', 'active'].includes(s)) className += 'status-success';
     else if (['pending', 'unpaid', 'not yet paid'].includes(s)) className += 'status-pending';
     else if (['rejected', 'cancelled'].includes(s)) className += 'status-rejected';
     else className += 'status-processing';
-    
+
     return <span className={className}>{status}</span>;
   };
 
   // --- Loading & Error States ---
   if (loading) return <div className="profile-wrapper"><h3>Đang tải dữ liệu...</h3></div>;
-  if (error) return <div className="profile-wrapper"><h3 style={{color: 'red'}}>Lỗi: {error}</h3></div>;
+  if (error) return <div className="profile-wrapper"><h3 style={{ color: 'red' }}>Lỗi: {error}</h3></div>;
   if (!user) return null;
 
   const totalSpent = user.invoices
@@ -182,11 +182,11 @@ const UserProfile = ({ userId }) => {
                 </thead>
                 <tbody>
                   {user.roomBookings.length === 0 ? (
-                    <tr><td colSpan="5" style={{textAlign:'center'}}>Chưa có dữ liệu</td></tr>
+                    <tr><td colSpan="5" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.roomBookings.map(bk => (
                       <tr key={bk.bookingId}>
-                        <td style={{fontWeight: 'bold', color: 'var(--primary)'}}>
+                        <td style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
                           {bk.roomName}
                         </td>
                         <td>{bk.date}</td>
@@ -207,9 +207,9 @@ const UserProfile = ({ userId }) => {
           <>
             <div className="card-header">
               <h3 className="header-title">{Icons.Invoice} Hóa đơn & Thanh toán</h3>
-              <div style={{textAlign: 'right'}}>
-                <span style={{fontSize: '0.9rem', color: '#666'}}>Đã thanh toán: </span>
-                <span style={{fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.1rem'}}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.9rem', color: '#666' }}>Đã thanh toán: </span>
+                <span style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.1rem' }}>
                   {totalSpent.toLocaleString('vi-VN')} đ
                 </span>
               </div>
@@ -226,15 +226,15 @@ const UserProfile = ({ userId }) => {
                   </tr>
                 </thead>
                 <tbody>
-                   {user.invoices.length === 0 ? (
-                    <tr><td colSpan="5" style={{textAlign:'center'}}>Chưa có dữ liệu</td></tr>
+                  {user.invoices.length === 0 ? (
+                    <tr><td colSpan="5" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.invoices.map(inv => (
                       <tr key={inv.invoiceId}>
                         <td>#{inv.invoiceId}</td>
                         <td>BK-{inv.bookingRefId}</td>
                         <td>{inv.paymentDate || '-'}</td>
-                        <td style={{fontWeight: 'bold'}}>{inv.totalAmount.toLocaleString('vi-VN')} đ</td>
+                        <td style={{ fontWeight: 'bold' }}>{inv.totalAmount.toLocaleString('vi-VN')} đ</td>
                         <td>{renderStatusBadge(inv.status)}</td>
                       </tr>
                     ))
@@ -248,7 +248,7 @@ const UserProfile = ({ userId }) => {
       case 'reports':
         return (
           <>
-             <div className="card-header">
+            <div className="card-header">
               <h3 className="header-title">{Icons.Report} Báo cáo sự cố</h3>
             </div>
             <div className="card-body">
@@ -263,13 +263,13 @@ const UserProfile = ({ userId }) => {
                 </thead>
                 <tbody>
                   {user.incidentReports.length === 0 ? (
-                    <tr><td colSpan="4" style={{textAlign:'center'}}>Chưa có dữ liệu</td></tr>
+                    <tr><td colSpan="4" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.incidentReports.map(rp => (
                       <tr key={rp.reportId}>
                         <td>#{rp.reportId}</td>
-                        <td style={{fontWeight:'600'}}>{rp.title}</td>
-                        <td style={{maxWidth: '200px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                        <td style={{ fontWeight: '600' }}>{rp.title}</td>
+                        <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {rp.description}
                         </td>
                         <td>{renderStatusBadge(rp.status)}</td>
@@ -349,6 +349,73 @@ const UserProfile = ({ userId }) => {
             </>
         );
 
+      // --- MỚI: Case cho Đổi mật khẩu ---
+      case 'changepassword':
+        return (
+          <>
+            <div className="card-header">
+              <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleChangePassword}>
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label className="label">Mật khẩu hiện tại</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        className="input-field"
+                        placeholder="Nhập mật khẩu cũ"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Mật khẩu mới</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        className="input-field"
+                        placeholder="Nhập mật khẩu mới"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Xác nhận mật khẩu mới</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        className="input-field"
+                        placeholder="Nhập lại mật khẩu mới"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-save">
+                  {Icons.Save} Xác nhận đổi
+                </button>
+              </form>
+            </div>
+          </>
+        );
+
       case 'info':
       default:
         return (
@@ -380,9 +447,9 @@ const UserProfile = ({ userId }) => {
                     <label className="label">Họ và tên</label>
                     <div className="input-wrapper">
                       <span className="input-icon">{Icons.User}</span>
-                      <input 
-                        type="text" name="fullName" className="input-field" 
-                        value={user.fullName} onChange={handleChange} 
+                      <input
+                        type="text" name="fullName" className="input-field"
+                        value={user.fullName} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -390,9 +457,9 @@ const UserProfile = ({ userId }) => {
                     <label className="label">Email</label>
                     <div className="input-wrapper">
                       <span className="input-icon">{Icons.Mail}</span>
-                      <input 
-                        type="email" name="email" className="input-field" 
-                        value={user.email} onChange={handleChange} 
+                      <input
+                        type="email" name="email" className="input-field"
+                        value={user.email} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -400,9 +467,9 @@ const UserProfile = ({ userId }) => {
                     <label className="label">Số điện thoại</label>
                     <div className="input-wrapper">
                       <span className="input-icon">{Icons.Phone}</span>
-                      <input 
-                        type="text" name="phoneNumber" className="input-field" 
-                        value={user.phoneNumber || ''} onChange={handleChange} 
+                      <input
+                        type="text" name="phoneNumber" className="input-field"
+                        value={user.phoneNumber || ''} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -414,7 +481,7 @@ const UserProfile = ({ userId }) => {
                     </div>
                   </div>
                 </div>
-                
+
                 <button type="submit" className="btn-save">
                   {Icons.Save} Lưu thay đổi
                 </button>
@@ -464,18 +531,18 @@ const UserProfile = ({ userId }) => {
             </div>
           </div>
 
-            <div className="stats-grid">
-              <div className="stat-box">
-                <span className="stat-num">{user.roomBookings.length}</span>
-                <span className="stat-label">Lượt đặt</span>
-              </div>
-               <div className="stat-box">
-                <span className="stat-num" style={{color: pendingInvoices > 0 ? '#d97706' : '#10b981'}}>
-                  {pendingInvoices}
-                </span>
-                <span className="stat-label">Chưa TT</span>
-              </div>
+          <div className="stats-grid">
+            <div className="stat-box">
+              <span className="stat-num">{user.roomBookings.length}</span>
+              <span className="stat-label">Lượt đặt</span>
             </div>
+            <div className="stat-box">
+              <span className="stat-num" style={{ color: pendingInvoices > 0 ? '#d97706' : '#10b981' }}>
+                {pendingInvoices}
+              </span>
+              <span className="stat-label">Chưa TT</span>
+            </div>
+          </div>
         </div>
 
         {/* --- RIGHT CONTENT --- */}

@@ -109,20 +109,12 @@ namespace Backend.Controllers.admin
         /// PATCH /api/bookings/{id}/reject
         /// Từ chối yêu cầu đặt phòng, body: { "reason": "lý do" }
         /// </summary>        [HttpPatch("{id}/reject")]
-        public async Task<IActionResult> RejectBooking(int id, [FromBody] RejectBookingDto rejectDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+        //public async Task<IActionResult> RejectBooking(int id, [FromBody] RejectBookingDto rejectDto)
+        //{
+        //    try
+        //    {
+        //        if (!ModelState.IsValid)
+        //            return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
 
-                var booking = await _bookingService.RejectBookingAsync(id, rejectDto);
-                return Ok(new { success = true, message = "Từ chối đặt phòng thành công", data = booking });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-        }
     }
 }
