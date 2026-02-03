@@ -143,6 +143,7 @@ public partial class QuanLyPhongMayContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.IsUsed).HasDefaultValue(false);
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
             entity.HasOne(d => d.Room).WithMany(p => p.RoomBookings)
@@ -189,6 +190,7 @@ public partial class QuanLyPhongMayContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
             entity.Property(e => e.Username).HasMaxLength(50);
+            entity.Property(e => e.Point).HasDefaultValue(100);
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)

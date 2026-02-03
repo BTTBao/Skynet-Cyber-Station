@@ -26,6 +26,7 @@ public partial class User
     public bool? IsStaff { get; set; }
 
     public string? Department { get; set; }
+    public int Point { get; set; }
 
     public string? Status { get; set; }
 

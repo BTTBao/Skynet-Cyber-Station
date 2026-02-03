@@ -1,4 +1,6 @@
 using Backend.Models;
+using Backend.Repository.admin;
+using Backend.Service;
 using Microsoft.EntityFrameworkCore;
 // 1. THÊM CÁC THƯ VIỆN NÀY
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,6 +12,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ===== Add services to the container =====
 builder.Services.AddControllers();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<InvoiceService>();
+builder.Services.AddScoped<InvoiceRepository>();
 
 // ===== Configure CORS =====
 builder.Services.AddCors(options =>
