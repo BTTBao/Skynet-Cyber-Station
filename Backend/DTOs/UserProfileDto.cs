@@ -2,7 +2,11 @@
 
 namespace Backend.DTOs
 {
-    // DTO tổng cho Profile
+    public class LoginDto
+    {
+        public string Username { get; set; } = null!;
+        public string Password { get; set; } = null!;
+    }
     public class UserProfileDto
     {
         public int UserId { get; set; }

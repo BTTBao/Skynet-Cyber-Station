@@ -16,18 +16,19 @@ const Icons = {
   Save: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
 
-const UserProfile = () => {
+const UserProfile = ({ userId }) => { // <--- 1. Nhận props là userId
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
-  // Giả lập lấy ID người dùng hiện tại (Trong thực tế lấy từ localStorage/Token)
-  const currentUserId = 2; 
-
   // --- 1. Fetch Data từ API ---
   useEffect(() => {
-    fetch(`${API_BASE_URL}/Users/${currentUserId}`)
+    // Kiểm tra nếu chưa có userId thì không chạy
+    if (!userId) return; 
+
+    // 2. SỬA LỖI Ở ĐÂY: Thay currentUserId thành userId
+    fetch(`${API_BASE_URL}/Users/${userId}`) 
       .then(response => {
         if (!response.ok) {
           throw new Error('Không thể tải dữ liệu người dùng.');
@@ -35,7 +36,6 @@ const UserProfile = () => {
         return response.json();
       })
       .then(data => {
-        // Data trả về khớp với UserProfileDto trong C#
         setUser(data);
         setLoading(false);
       })
@@ -44,7 +44,7 @@ const UserProfile = () => {
         setError(err.message);
         setLoading(false);
       });
-  }, [currentUserId]);
+  }, [userId]);
 
   // --- 2. Xử lý Update Data ---
   const handleSave = async (e) => {
