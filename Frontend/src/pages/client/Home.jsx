@@ -1,5 +1,4 @@
-import React, { useState } from "react"
-import { MOCK_ROOMS, MOCK_USERS } from "../../data/constants"
+import React, { useEffect, useState } from "react"
 import { UserRole } from "../../data/type"
 import { BookingModal } from "../../components/BookingModal"
 import { ReportModal } from "../../components/ReportModal"
@@ -12,6 +11,8 @@ import { ReportsView } from "../../components/home/ReportsView"
 import UserProfile from "./UserProfile"
 import { format } from "date-fns"
 import { RoomService } from "../../services/RoomService"
+import { BookingService } from "../../services/BookingService"
+import { useNavigate } from "react-router-dom"
 
 const Home = () => {
     const navigate = useNavigate()
@@ -22,19 +23,9 @@ const Home = () => {
         const savedUser = localStorage.getItem("currentUser")
         return savedUser ? JSON.parse(savedUser) : null
     })
-
-    const [activeTab, setActiveTab] = useState("rooms")
-    // Room data từ API
     const [rooms, setRooms] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-
-    // 1. CHỈNH SỬA QUAN TRỌNG:
-    // Nếu không có localStorage, trả về null (không dùng MOCK_USERS[0] nữa)
-    const [currentUser, setCurrentUser] = useState(() => {
-        const savedUser = localStorage.getItem("currentUser")
-        return savedUser ? JSON.parse(savedUser) : null
-    })
 
     const [activeTab, setActiveTab] = useState("rooms")
     const [bookings, setBookings] = useState([])
@@ -53,22 +44,31 @@ const Home = () => {
 
     // Load danh sách phòng từ API khi component mount
     useEffect(() => {
-        const fetchRooms = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true)
-                const data = await RoomService.getAllRooms()
-                setRooms(data)
-                setError(null)
+                
+                // Gọi song song cả 2 API: Lấy phòng và Lấy lịch đặt
+                const [roomsData, bookingsData] = await Promise.all([
+                    RoomService.getAllRooms(),
+                    BookingService.getAllBookings()
+                ]);
+
+                setRooms(roomsData);
+                setBookings(bookingsData); // Cập nhật state bookings từ API
+                
+                setError(null);
             } catch (err) {
-                console.error('Lỗi khi tải danh sách phòng:', err)
-                setError('Không thể tải danh sách phòng. Vui lòng kiểm tra kết nối đến server.')
-                setRooms([]) // Fallback về array rỗng
+                console.error('Lỗi khi tải dữ liệu hệ thống:', err);
+                setError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối.');
+                setRooms([]);
+                setBookings([]);
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
         }
 
-        fetchRooms()
+        fetchData();
     }, [])
 
     // Handlers
@@ -95,8 +95,6 @@ const Home = () => {
             return
         }
         let targetRoom = rooms.find(r => r.id === calendarSelectedRoomId)
-
-        let targetRoom = MOCK_ROOMS.find(r => r.id === calendarSelectedRoomId)
         if (!targetRoom && calendarSelectedRoomId === "all") {
             alert("Vui lòng chọn một phòng cụ thể từ menu thả xuống trước khi chọn giờ.")
             return
@@ -196,14 +194,14 @@ const Home = () => {
                         {activeTab === "reports" && "Lịch sử sự cố"}
                         {activeTab === "profile" && "Hồ sơ cá nhân"}
                     </h1>
-                    
+
                     {/* Chỉ hiện Avatar nếu đã đăng nhập */}
                     {currentUser ? (
                         <div className="md:hidden flex items-center gap-2">
                             <img src={currentUser.avatar} className="w-8 h-8 rounded-full" alt="avatar" />
                         </div>
                     ) : (
-                        <button 
+                        <button
                             onClick={() => navigate("/login")}
                             className="md:hidden text-sm text-blue-600 font-semibold"
                         >
@@ -288,7 +286,7 @@ const Home = () => {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full space-y-4">
                                 <p className="text-gray-600">Bạn chưa đăng nhập.</p>
-                                <button 
+                                <button
                                     onClick={() => navigate("/login")}
                                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                 >

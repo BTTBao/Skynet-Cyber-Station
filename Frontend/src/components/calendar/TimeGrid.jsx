@@ -59,8 +59,8 @@ export const TimeGrid = ({ type, currentDate, getBookingsForDate, rooms, onSlotC
                                             key={hour}
                                             onClick={() => !isBooked && onSlotClick(day, hour)}
                                             className={`h-20 border-b border-gray-100 transition-colors ${isBooked
-                                                    ? 'bg-gray-50/50 cursor-not-allowed'
-                                                    : 'cursor-pointer hover:bg-[#facb01]/10 group'
+                                                ? 'bg-gray-50/50 cursor-not-allowed'
+                                                : 'cursor-pointer hover:bg-[#facb01]/10 group'
                                                 }`}
                                         >
                                             {!isBooked && (
@@ -82,10 +82,22 @@ export const TimeGrid = ({ type, currentDate, getBookingsForDate, rooms, onSlotC
                             return (
                                 <div key={dayIndex} className="flex-1 relative h-full border-r border-transparent">
                                     {dayBookings.map(b => {
-                                        const startHourIndex = TIME_SLOTS.indexOf(b.startTime)
+                                        let startHourRaw = b.startTime;
+                                        let endHourRaw = b.endTime;
+                                        // Kiểm tra nếu nó là chuỗi ISO (VD: "2025-02-09T08:00:00") thì parse ra giờ
+                                        if (typeof startHourRaw === 'string' && startHourRaw.includes('T')) {
+                                            startHourRaw = new Date(startHourRaw).getHours();
+                                        }
+                                        if (typeof endHourRaw === 'string' && endHourRaw.includes('T')) {
+                                            endHourRaw = new Date(endHourRaw).getHours();
+                                        }
+
+                                        // 2. Tìm index dựa trên số giờ đã parse
+                                        const startHourIndex = TIME_SLOTS.indexOf(Number(startHourRaw))
                                         if (startHourIndex === -1) return null
 
-                                        const duration = b.endTime - b.startTime
+                                        const duration = Number(endHourRaw) - Number(startHourRaw)
+
                                         const top = startHourIndex * 80
                                         const height = duration * 80
 
@@ -94,9 +106,9 @@ export const TimeGrid = ({ type, currentDate, getBookingsForDate, rooms, onSlotC
                                                 key={b.id}
                                                 className="absolute left-1 right-1 rounded-md p-2 bg-[#271756] text-white border-l-4 border-[#facb01] shadow-md overflow-hidden pointer-events-auto hover:z-20 hover:scale-[1.02] transition-all"
                                                 style={{ top: `${top}px`, height: `${height - 2}px` }}
-                                                title={`${b.startTime}:00 - ${b.endTime}:00 | ${b.userName}`}
+                                                title={`${startHourRaw}:00 - ${endHourRaw}:00 | ${b.userName}`}
                                             >
-                                                <div className="text-xs font-bold truncate">{b.startTime}:00 - {b.endTime}:00</div>
+                                                <div className="text-xs font-bold truncate">{startHourRaw}:00 - {endHourRaw}:00</div>
                                                 <div className="text-xs truncate font-medium text-[#facb01]">{rooms.find(r => r.id === b.roomId)?.name}</div>
                                                 {type === 'day' && (
                                                     <div className="text-xs mt-1 opacity-80">{b.purpose} - {b.userName}</div>

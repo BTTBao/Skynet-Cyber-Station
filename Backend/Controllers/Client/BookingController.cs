@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Client
 {
-    [Route("api/[controller]")]
+    [Route("api/client/[controller]")]
     [ApiController]
     public class BookingController : ControllerBase
     {
@@ -27,7 +27,7 @@ namespace Backend.Controllers.Client
                 var bookings = await _context.RoomBookings
                     .Include(b => b.User)  // Join bảng User để lấy tên
                     .Include(b => b.Room)  // Join bảng Room để lấy tên phòng
-                    .Where(b => b.Status != "REJECTED" && b.Status != "CANCELLED")
+                    .Where(b => b.Status == "Booked" || b.Status == "InUse")
                     .Select(b => new
                     {
                         id = b.BookingId,
