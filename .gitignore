@@ -1,47 +1,47 @@
-## --- PHẦN BACKEND (.NET / C#) ---
+## --- PHẦN BACKEND (.NET  C#) ---
 # Thư mục build và biên dịch
-[Bb]in/
-[Oo]bj/
+[Bb]in
+[Oo]bj
 
 # Cấu hình người dùng Visual Studio (User-specific)
-.vs/
-.vscode/
-*.user
-*.userosscache
-*.sln.docstates
-*.suo
-*.userprefs
+.vs
+.vscode
+.user
+.userosscache
+.sln.docstates
+.suo
+.userprefs
 
 # File rác hệ thống & Debug log
-*.log
-*.dmp
-*.stackdump
+.log
+.dmp
+.stackdump
 
 # NuGet Packages (Chỉ chặn thư mục gói, giữ lại file config)
-packages/
-!packages/build/
-*.nupkg
+packages
+!packagesbuild
+.nupkg
 
 # SQL Server (Local DB file)
-*.mdf
-*.ldf
+.mdf
+.ldf
 
 # Các file cấu hình chứa bí mật (Credential) - QUAN TRỌNG
-# Chỉ chặn file Development/Local để tránh lộ pass DB, giữ lại file appsettings.json gốc
+# Chỉ chặn file DevelopmentLocal để tránh lộ pass DB, giữ lại file appsettings.json gốc
 appsettings.Development.json
 appsettings.Local.json
 
-## --- PHẦN FRONTEND (REACTJS / NODEJS) ---
+## --- PHẦN FRONTEND (REACTJS  NODEJS) ---
 # Thư mục thư viện (Rất nặng - BẮT BUỘC PHẢI CHẶN)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
 
 # Thư mục build ra sản phẩm (React Vite)
-dist/
-dist-ssr/
-coverage/
+dist
+dist-ssr
+coverage
 
 # Các file biến môi trường (Chứa API Key, Port...)
 .env
@@ -63,9 +63,9 @@ Desktop.ini
 
 ## --- KHÁC ---
 # Test results
-TestResults/
-*.trdx
+TestResults
+.trdx
 
 # ReSharper (Nếu dùng JetBrains)
-_ReSharper*/
-*.ReSharper
+_ReSharper
+.ReSharper

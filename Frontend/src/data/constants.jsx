@@ -23,7 +23,7 @@ export const MOCK_USERS = [
 
 export const MOCK_ROOMS = [
     {
-        id: "r1",
+        id: "1",
         name: "Lab AI & Data Science",
         capacity: 30,
         machineCount: 30,
@@ -46,7 +46,7 @@ export const MOCK_ROOMS = [
         ]
     },
     {
-        id: "r2",
+        id: "2",
         name: "Lab Lập trình cơ bản",
         capacity: 40,
         machineCount: 40,
@@ -68,7 +68,7 @@ export const MOCK_ROOMS = [
         ]
     },
     {
-        id: "r3",
+        id: "3",
         name: "Studio Đồ họa & Multimedia",
         capacity: 20,
         machineCount: 20,

@@ -15,6 +15,7 @@ import Dashboard from './Dashboard';
 import AccountManagement from './AccountManagement';
 import RoomManagement from './RoomManagement';
 import BookingManagement from './BookingManagement';
+import InvoiceManagement from './InvoiceManagement';
 
 export default function AdminLayout() {
   const [activeMenu, setActiveMenu] = useState('');
@@ -26,6 +27,7 @@ export default function AdminLayout() {
     { id: 'labs', label: 'Quản lý phòng máy', icon: Monitor },
     { id: 'bookings', label: 'Quản lý book phòng', icon: Calendar },
     { id: 'incidents', label: 'Quản lý sự cố', icon: AlertCircle },
+    { id: 'invoices', label: 'Quản lý hóa đơn', icon: Menu },
   ];
 
   return (
@@ -121,10 +123,10 @@ export default function AdminLayout() {
               <div className="d-flex align-items-center gap-3">
                 <div className="bg-white rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold" 
                      style={{ width: '40px', height: '40px' }}>
-                  UTH
+                  UTC2
                 </div>
                 {sidebarOpen && (
-                  <span className="fw-semibold small">Admin Portal</span>
+                  <span className="fw-semibold small text-white">Admin Portal</span>
                 )}
               </div>
             </div>
@@ -183,7 +185,7 @@ export default function AdminLayout() {
                   </button>
                   
                   <div className="d-flex align-items-center gap-3">
-                    <div className="logo-circle rounded d-flex align-items-center justify-content-center text-white fw-bold fs-5">
+                    <div className="logo-circle rounded d-flex align-items-center justify-content-center text-white fw-bold fs-5 p-2">
                       UTC2
                     </div>
                     <div>
@@ -199,7 +201,7 @@ export default function AdminLayout() {
           </header>
 
           {/* Content Area */}
-          <main className={`content-area ${(activeMenu === 'dashboard' || activeMenu === 'accounts' || activeMenu === 'labs' || activeMenu === 'bookings') ? 'p-0' : 'p-4'}`}>
+          <main className={`content-area ${(activeMenu === 'invoices' || activeMenu === 'dashboard' || activeMenu === 'accounts' || activeMenu === 'labs' || activeMenu === 'bookings' || activeMenu === 'invoices') ? 'p-0' : 'p-4'}`}>
             {activeMenu === 'dashboard' ? (
               <Dashboard />
             ) : activeMenu === 'accounts' ? (
@@ -208,7 +210,9 @@ export default function AdminLayout() {
               <RoomManagement />
             ) : activeMenu === 'bookings' ? (
               <BookingManagement />
-            ) : activeMenu ? (
+            ) : activeMenu === 'invoices' ? (
+              <InvoiceManagement />
+            ): activeMenu ? (
               <div className="card border-0 shadow-sm content-card">
                 <div className="card-body d-flex align-items-center justify-content-center">
                   <div className="text-center">
