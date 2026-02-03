@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react"
-import { MOCK_USERS } from "../../data/constants"
-import { useNavigate } from "react-router-dom" // Import điều hướng
+import React, { useState } from "react"
+import { MOCK_ROOMS, MOCK_USERS } from "../../data/constants"
 import { UserRole } from "../../data/type"
 import { BookingModal } from "../../components/BookingModal"
 import { ReportModal } from "../../components/ReportModal"
@@ -30,6 +29,14 @@ const Home = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
+    // 1. CHỈNH SỬA QUAN TRỌNG:
+    // Nếu không có localStorage, trả về null (không dùng MOCK_USERS[0] nữa)
+    const [currentUser, setCurrentUser] = useState(() => {
+        const savedUser = localStorage.getItem("currentUser")
+        return savedUser ? JSON.parse(savedUser) : null
+    })
+
+    const [activeTab, setActiveTab] = useState("rooms")
     const [bookings, setBookings] = useState([])
     const [reports, setReports] = useState([])
     const [searchQuery, setSearchQuery] = useState("")
@@ -89,6 +96,7 @@ const Home = () => {
         }
         let targetRoom = rooms.find(r => r.id === calendarSelectedRoomId)
 
+        let targetRoom = MOCK_ROOMS.find(r => r.id === calendarSelectedRoomId)
         if (!targetRoom && calendarSelectedRoomId === "all") {
             alert("Vui lòng chọn một phòng cụ thể từ menu thả xuống trước khi chọn giờ.")
             return

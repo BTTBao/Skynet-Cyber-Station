@@ -285,6 +285,73 @@ const UserProfile = ({ userId }) => {
       // --- MỚI: Case cho Đổi mật khẩu ---
       case 'changepassword':
         return (
+            <>
+            <div className="card-header">
+                <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
+            </div>
+            <div className="card-body">
+                <form onSubmit={handleChangePassword}>
+                <div className="form-grid">
+                    <div className="form-group full-width">
+                        <label className="label">Mật khẩu hiện tại</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="currentPassword" 
+                                className="input-field" 
+                                placeholder="Nhập mật khẩu cũ"
+                                value={passwordData.currentPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Mật khẩu mới</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="newPassword" 
+                                className="input-field" 
+                                placeholder="Nhập mật khẩu mới"
+                                value={passwordData.newPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Xác nhận mật khẩu mới</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                className="input-field" 
+                                placeholder="Nhập lại mật khẩu mới"
+                                value={passwordData.confirmPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" className="btn-save">
+                    {Icons.Save} Xác nhận đổi
+                </button>
+                </form>
+            </div>
+            </>
+        );
+
+      // --- MỚI: Case cho Đổi mật khẩu ---
+      case 'changepassword':
+        return (
           <>
             <div className="card-header">
               <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
