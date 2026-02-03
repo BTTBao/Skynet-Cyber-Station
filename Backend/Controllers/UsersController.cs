@@ -59,7 +59,47 @@ namespace Backend.Controllers
                 }
             });
         }
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+        {
+            // 1. Tìm User trong database
+            var user = await _context.Users.FindAsync(request.UserId);
 
+            if (user == null)
+            {
+                return NotFound(new { message = "Không tìm thấy người dùng." });
+            }
+
+            // 2. Kiểm tra mật khẩu hiện tại
+            // LƯU Ý: Nếu database lưu mật khẩu mã hóa, hãy Hash(request.CurrentPassword) trước khi so sánh
+            if (user.PasswordHash != request.CurrentPassword)
+            {
+                return BadRequest(new { message = "Mật khẩu hiện tại không chính xác." });
+            }
+
+            // 3. Kiểm tra mật khẩu mới (Validation đơn giản)
+            if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return BadRequest(new { message = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+            }
+
+            // 4. Cập nhật mật khẩu mới
+            // LƯU Ý: Nếu dùng bảo mật, hãy Hash(request.NewPassword) trước khi gán
+            user.PasswordHash = request.NewPassword;
+
+            try
+            {
+                // 5. Lưu xuống Database
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Đổi mật khẩu thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
         // Hàm phụ trợ để tạo Token
         private string GenerateJwtToken(User user)
         {

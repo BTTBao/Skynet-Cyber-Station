@@ -1,5 +1,4 @@
 import React, { useState } from "react"
-// 1. IMPORT HOOK CHUYỂN HƯỚNG
 import { useNavigate } from "react-router-dom" 
 import { User, Lock, Loader2, AlertCircle } from "lucide-react"
 
@@ -9,7 +8,6 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  // 2. KHAI BÁO BIẾN ĐIỀU HƯỚNG
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -32,17 +30,13 @@ const Login = ({ onLogin }) => {
         throw new Error(data.message || "Đăng nhập thất bại.");
       }
 
-      // === THÀNH CÔNG ===
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-      // Cập nhật state Global (nếu có dùng ở App.js)
       if (onLogin) {
         onLogin(data.user);
       }
 
-      // 3. CHUYỂN HƯỚNG VỀ TRANG CHỦ ("/")
-      // Bạn có thể đổi "/" thành "/home" hoặc "/dashboard" tùy router của bạn
       navigate("/"); 
 
     } catch (err) {
@@ -123,7 +117,15 @@ const Login = ({ onLogin }) => {
         
         <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 text-center">
           <p className="text-sm text-gray-600">
-            Quên mật khẩu? <a href="#" className="font-medium text-blue-600 hover:text-blue-500">Liên hệ Admin</a>
+             {/* --- ĐÃ SỬA ĐOẠN NÀY --- */}
+            Quên mật khẩu?{" "}
+            <button 
+                onClick={() => navigate("/")}
+                className="font-medium text-blue-600 hover:text-blue-500 hover:underline bg-transparent border-none cursor-pointer"
+            >
+                Trang chủ
+            </button>
+             {/* ----------------------- */}
           </p>
         </div>
       </div>

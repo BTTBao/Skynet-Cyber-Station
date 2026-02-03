@@ -2,6 +2,12 @@
 
 namespace Backend.DTOs
 {
+    public class ChangePasswordDto
+    {
+        public int UserId { get; set; }
+        public string CurrentPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
     public class LoginDto
     {
         public string Username { get; set; } = null!;
