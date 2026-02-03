@@ -23,6 +23,8 @@ public partial class RoomBooking
 
     public string? Status { get; set; }
 
+    public bool? IsUsed { get; set; }
+
     public string? RejectionReason { get; set; }
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();

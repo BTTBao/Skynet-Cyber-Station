@@ -1,18 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye, X,
   Users, Calendar, AlignLeft, ChevronDown, Filter
 } from 'lucide-react';
 
-// ─── SAMPLE DATA ─────────────────────────────────────────────────────
-const ROOMS = ['PC-101','PC-102','PC-201','PC-202','PC-301','PC-302','PC-401','PC-402','PC-501','PC-502'];
-const PURPOSES = ['Học lập trình','Thi trực tuyến','Thực hành đồ họa','Thuyết trình dự án','Buổi họp nhóm','Ôn tập cuối kỳ','Nghiên cứu khoa học','Thực hành mạng máy','Hội thảo','Đào tạo nâng cao'];
-const NAMES = [
-  'Nguyễn Văn An','Trần Thị Bình','Lê Hoàng Cường','Phạm Minh Đức','Võ Thị Em',
-  'Hoàng Văn Phong','Đặng Thị Giang','Bùi Minh Hải','Tran Quoc Hoa','Nguyen Thi Lan',
-  'Pham Van Tuan','Le Thi Mai','Nguyen Quang Vinh','Tran Thu Huong','Dang Van Kien',
-  'Hoang Thi Anh','Bui Quang Dat','Vo Minh Toan','Nguyen Huu Duc','Le Phuong Linh'
-];
+// ─── CONSTANTS (static, không cần fetch từ API) ─────────────────────
 const REJECT_REASONS = [
   'Phòng đã được đặt trong giờ giấy trường',
   'Số lượng người vượt quá công suất phòng',
@@ -24,43 +16,7 @@ const REJECT_REASONS = [
   'Lý do khác'
 ];
 
-const pad = n => String(n).padStart(2, '0');
-const fmtDate = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-
-function genBookings() {
-  const now = new Date();
-  const arr = [];
-  for (let i = 0; i < 24; i++) {
-    const dayOff = Math.floor(Math.random() * 14) - 4; // -4 to +9 days
-    const date = new Date(now); date.setDate(date.getDate() + dayOff);
-    const hIn = 7 + Math.floor(Math.random() * 10); // 7-16
-    const dur = 1 + Math.floor(Math.random() * 4);  // 1-4 hrs
-    const hOut = hIn + dur;
-    const people = 2 + Math.floor(Math.random() * 28);
-    let status = 'pending';
-    if (i < 6) status = 'pending';
-    else if (i < 14) status = 'approved';
-    else status = 'rejected';
-
-    arr.push({
-      id: i + 1,
-      code: `BK-${String(1001 + i)}`,
-      name: NAMES[i % NAMES.length],
-      roomCode: ROOMS[i % ROOMS.length],
-      date: fmtDate(date),
-      timeIn: `${pad(hIn)}:00`,
-      timeOut: `${pad(hOut)}:00`,
-      people,
-      purpose: PURPOSES[i % PURPOSES.length],
-      status,
-      rejectedReason: status === 'rejected' ? REJECT_REASONS[i % REJECT_REASONS.length] : '',
-      createdAt: new Date(now.getTime() - (20 - i) * 3600000 * 24).toLocaleDateString('vi-VN')
-    });
-  }
-  return arr;
-}
-
-const initialBookings = genBookings();
+const API_BASE_URL = 'http://localhost:5270/api';
 
 // ─── STYLES ──────────────────────────────────────────────────────────
 const CSS = `
@@ -113,7 +69,6 @@ const CSS = `
 .bk-tbl tr.row-rejected { border-left:3px solid #ef4444; }
 
 .bk-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:#6366f1; font-weight:600; background:#eef2ff; padding:3px 8px; border-radius:5px; display:inline-block; }
-.bk-rcode { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#475569; font-weight:600; }
 .bk-name { font-weight:600; color:#1e293b; }
 .bk-sub { font-size:11.5px; color:#94a3b8; margin-top:1px; }
 .bk-time { display:flex; align-items:center; gap:4px; }
@@ -135,6 +90,14 @@ const CSS = `
 .bk-abtn.reject { color:#ef4444; } .bk-abtn.reject:hover { border-color:#ef4444; background:#fef2f2; }
 .bk-abtn:disabled { opacity:.3; cursor:not-allowed; transform:none; box-shadow:none; }
 
+/* loading spinner */
+.bk-spinner { display:inline-block; width:22px; height:22px; border:3px solid #f3f3f3; border-top:3px solid #6366f1; border-radius:50%; animation:bkSpin 0.8s linear infinite; }
+@keyframes bkSpin { to { transform:rotate(360deg); } }
+
+/* error banner */
+.bk-error { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#dc2626; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; }
+.bk-error button { background:none; border:none; color:#dc2626; cursor:pointer; font-size:18px; line-height:1; }
+
 /* empty */
 .bk-empty { padding:56px 20px; text-align:center; color:#94a3b8; }
 .bk-empty svg { opacity:.4; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto; }
@@ -147,8 +110,6 @@ const CSS = `
 .bk-mh { padding:18px 22px 15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; }
 .bk-mh h3 { font-size:16px; color:#1e293b; font-weight:700; margin:0; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .bk-mh .mh-code { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#6366f1; background:#eef2ff; padding:2px 8px; border-radius:5px; font-weight:600; }
-.bk-mcl { width:28px; height:28px; border-radius:8px; border:none; background:#f1f5f9; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#64748b; transition:.2s; }
-.bk-mcl:hover { background:#e2e8f0; }
 .bk-mb { padding:20px 22px 22px; }
 
 /* detail grid */
@@ -168,7 +129,7 @@ const CSS = `
 .bk-rej-ta { width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:9px; font-size:13.5px; outline:none; resize:vertical; min-height:72px; color:#1e293b; font-family:inherit; transition:.2s; }
 .bk-rej-ta:focus { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.12); }
 
-/* rejected reason display in detail */
+/* rejected reason box in detail */
 .bk-rej-box { background:#fef2f2; border:1px solid #fecaca; border-radius:9px; padding:12px 14px; margin-top:2px; }
 .bk-rej-box .rb-title { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#dc2626; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:4px; }
 .bk-rej-box .rb-text { font-size:13px; color:#991b1b; font-weight:500; line-height:1.45; }
@@ -187,12 +148,24 @@ const CSS = `
 .bk-confirm { max-width:400px; }
 .bk-confirm-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
 .bk-confirm-icon.ci-approve { background:#ecfdf5; color:#10b981; }
-.bk-confirm-icon.ci-reject  { background:#fef2f2; color:#ef4444; }
 .bk-confirm h4 { text-align:center; font-size:16px; color:#1e293b; margin-bottom:6px; }
 .bk-confirm p { text-align:center; font-size:13px; color:#64748b; line-height:1.5; }
 
-/* responsive */
-@media(max-width:900px){ .bk-stats{grid-template-columns:repeat(2,1fr);} }
+/* ─── isUsed section ─── */
+.bk-used-box { margin-top:16px; padding:14px 16px; border-radius:10px; border:1.5px solid #e2e8f0; background:#f8fafc; }
+.bk-used-box .ub-title { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#64748b; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:5px; }
+.bk-used-badge { display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:8px 14px; }
+.bk-used-badge svg { color:#10b981; }
+.bk-used-badge span { font-size:13.5px; font-weight:600; color:#059669; }
+.bk-used-btns { display:flex; gap:10px; }
+.bk-used-btn { flex:1; padding:9px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; border:1.5px solid; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.bk-used-btn:hover { transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.1); }
+.bk-used-btn.confirm { background:#10b981; color:#fff; border-color:#10b981; }
+.bk-used-btn.confirm:hover { background:#059669; border-color:#059669; }
+.bk-used-btn.cancel { background:#fff; color:#64748b; border-color:#e2e8f0; }
+.bk-used-btn.cancel:hover { background:#f1f5f9; border-color:#cbd5e1; }
+
+/* responsive */@media(max-width:900px){ .bk-stats{grid-template-columns:repeat(2,1fr);} }
 @media(max-width:600px){ .bk-stats{grid-template-columns:1fr 1fr;} .bk-toolbar{flex-direction:column;align-items:stretch;} .bk-search{max-width:100%;} .bk-dg{grid-template-columns:1fr;} }
 `;
 
@@ -208,51 +181,163 @@ const rowCls      = s => ({ pending:'row-pending', approved:'row-approved', reje
 
 // ─── COMPONENT ───────────────────────────────────────────────────────
 export default function BookingManagement() {
-  const [bookings, setBookings]       = useState(initialBookings);
-  const [search, setSearch]           = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  // ── state ─────────────────────────────────────────────────────────
+  const [bookings, setBookings]             = useState([]);
+  const [statistics, setStatistics]         = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+  const [search, setSearch]                 = useState('');
+  const [filterStatus, setFilterStatus]     = useState('all');
+  const [loading, setLoading]               = useState(false);
+  const [error, setError]                   = useState(null);
 
   // modals
-  const [viewItem,   setViewItem]     = useState(null);   // detail modal
-  const [rejectItem, setRejectItem]   = useState(null);   // reject-reason modal
-  const [confirmItem,setConfirmItem]  = useState(null);   // approve-confirm modal  { booking, action }
+  const [viewItem,    setViewItem]          = useState(null);
+  const [rejectItem,  setRejectItem]        = useState(null);
+  const [confirmItem, setConfirmItem]       = useState(null);
 
-  // reject form state
-  const [rejReason,  setRejReason]    = useState(REJECT_REASONS[0]);
-  const [rejNote,    setRejNote]      = useState('');
+  // reject form
+  const [rejReason,   setRejReason]         = useState(REJECT_REASONS[0]);
+  const [rejNote,     setRejNote]           = useState('');
 
-  // ── derived ──
+  // ── API helpers ───────────────────────────────────────────────────
+  const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res    = await fetch(`${API_BASE_URL}/bookings`);
+      const result = await res.json();
+      if (result.success) {
+        setBookings(result.data);
+        setError(null);
+      } else {
+        setError(result.message || 'Không thể tải danh sách đặt phòng');
+      }
+    } catch {
+      setError('Lỗi kết nối đến server');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchStatistics = useCallback(async () => {
+    try {
+      const res    = await fetch(`${API_BASE_URL}/bookings/statistics`);
+      const result = await res.json();
+      if (result.success) setStatistics(result.data);
+    } catch {
+      console.error('Fetch statistics failed');
+    }
+  }, []);
+
+  const searchBookings = useCallback(async (term) => {
+    setLoading(true);
+    try {
+      const res    = await fetch(`${API_BASE_URL}/bookings/search?searchTerm=${encodeURIComponent(term)}`);
+      const result = await res.json();
+      if (result.success) {
+        setBookings(result.data);
+        setError(null);
+      }
+    } catch {
+      setError('Lỗi kết nối đến server');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ── mount: load data ──────────────────────────────────────────────
+  useEffect(() => {
+    fetchBookings();
+    fetchStatistics();
+  }, [fetchBookings, fetchStatistics]);
+
+  // ── search: debounce 400ms ────────────────────────────────────────
+  useEffect(() => {
+    if (!search.trim()) {
+      fetchBookings();
+      return;
+    }
+    const timer = setTimeout(() => searchBookings(search), 400);
+    return () => clearTimeout(timer);
+  }, [search, fetchBookings, searchBookings]);
+
+  // ── filter client-side theo tab status ────────────────────────────
   const filtered = useMemo(() => {
-    const s = search.toLowerCase();
-    return bookings.filter(b => {
-      const matchS = b.name.toLowerCase().includes(s) ||
-                     b.code.toLowerCase().includes(s) ||
-                     b.roomCode.toLowerCase().includes(s) ||
-                     b.purpose.toLowerCase().includes(s);
-      const matchF = filterStatus === 'all' || b.status === filterStatus;
-      return matchS && matchF;
-    });
-  }, [bookings, search, filterStatus]);
+    if (filterStatus === 'all') return bookings;
+    return bookings.filter(b => b.status === filterStatus);
+  }, [bookings, filterStatus]);
 
-  const countByStatus = s => bookings.filter(b => b.status === s).length;
+  // ── actions ───────────────────────────────────────────────────────
+  // Duyệt: PATCH /api/bookings/{id}/approve
+  const approve = async (id) => {
+    try {
+      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/approve`, { method: 'PATCH' });
+      const result = await res.json();
 
-  // ── actions ──
-  const approve = (id) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status:'approved' } : b));
-    setConfirmItem(null);
-    if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status:'approved' }));
+      if (result.success) {
+        // optimistic update: đổi status ngay trên UI
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved', rejectedReason: '' } : b));
+        setConfirmItem(null);
+        // sync viewItem nếu đang mở detail modal của item này
+        if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status: 'approved', rejectedReason: '' }));
+        // refresh stats
+        await fetchStatistics();
+      } else {
+        alert(result.message || 'Duyệt thất bại');
+      }
+    } catch {
+      alert('Lỗi kết nối đến server');
+    }
   };
 
-  const reject = (id) => {
-    const reason = rejReason === 'Lý do khác' ? (rejNote.trim() || 'Lý do khác') : rejReason + (rejNote.trim() ? ` — ${rejNote.trim()}` : '');
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status:'rejected', rejectedReason: reason } : b));
-    setRejectItem(null);
-    setRejReason(REJECT_REASONS[0]);
-    setRejNote('');
-    if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status:'rejected', rejectedReason: reason }));
+  // Từ chối: PATCH /api/bookings/{id}/reject  body: { reason }
+  const reject = async (id) => {
+    // Build reason string: nếu chọn "Lý do khác" → dùng rejNote, nếu có note thêm → append
+    const reason = rejReason === 'Lý do khác'
+      ? (rejNote.trim() || 'Lý do khác')
+      : rejReason + (rejNote.trim() ? ` — ${rejNote.trim()}` : '');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/bookings/${id}/reject`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ reason })   // → maps to RejectBookingDto.Reason
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        // optimistic update
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'rejected', rejectedReason: reason } : b));
+        setRejectItem(null);
+        setRejReason(REJECT_REASONS[0]);
+        setRejNote('');
+        if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status: 'rejected', rejectedReason: reason }));
+        await fetchStatistics();
+      } else {
+        alert(result.message || 'Từ chối thất bại');
+      }
+    } catch {
+      alert('Lỗi kết nối đến server');
+    }
   };
 
-  // ── render ───
+  // Đánh dấu dùng phòng: PATCH /api/bookings/{id}/mark-used
+  const markAsUsed = async (id) => {
+    try {
+      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/mark-used`, { method: 'PATCH' });
+      const result = await res.json();
+
+      if (result.success) {
+        // optimistic update
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, isUsed: true } : b));
+        // sync viewItem nếu đang mở detail modal
+        if (viewItem?.id === id) setViewItem(prev => ({ ...prev, isUsed: true }));
+      } else {
+        alert(result.message || 'Đánh dấu sử dụng thất bại');
+      }
+    } catch {
+      alert('Lỗi kết nối đến server');
+    }
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
@@ -264,22 +349,30 @@ export default function BookingManagement() {
           <p>Duyệt, từ chối và theo dõi các yêu cầu đặt phòng từ khách hàng</p>
         </div>
 
-        {/* Stats */}
+        {/* Error banner */}
+        {error && (
+          <div className="bk-error">
+            <span>⚠️ {error}</span>
+            <button onClick={() => { setError(null); fetchBookings(); }}>×</button>
+          </div>
+        )}
+
+        {/* Stats ── dùng statistics từ API ──────────────────────────── */}
         <div className="bk-stats">
           <div className="bk-sc bk-blue">
-            <div><div className="sv">{bookings.length}</div><div className="sl">Tổng đặt phòng</div></div>
+            <div><div className="sv">{statistics.total}</div><div className="sl">Tổng đặt phòng</div></div>
             <div className="si"><Calendar size={18}/></div>
           </div>
           <div className="bk-sc bk-amber">
-            <div><div className="sv">{countByStatus('pending')}</div><div className="sl">Chờ duyệt</div></div>
+            <div><div className="sv">{statistics.pending}</div><div className="sl">Chờ duyệt</div></div>
             <div className="si"><Clock size={18}/></div>
           </div>
           <div className="bk-sc bk-green">
-            <div><div className="sv">{countByStatus('approved')}</div><div className="sl">Đã duyệt</div></div>
+            <div><div className="sv">{statistics.approved}</div><div className="sl">Đã duyệt</div></div>
             <div className="si"><CheckCircle2 size={18}/></div>
           </div>
           <div className="bk-sc bk-red">
-            <div><div className="sv">{countByStatus('rejected')}</div><div className="sl">Từ chối</div></div>
+            <div><div className="sv">{statistics.rejected}</div><div className="sl">Từ chối</div></div>
             <div className="si"><XCircle size={18}/></div>
           </div>
         </div>
@@ -288,14 +381,19 @@ export default function BookingManagement() {
         <div className="bk-toolbar">
           <div className="bk-search">
             <Search className="bk-si" size={16} />
-            <input type="text" placeholder="Tìm kiếm theo tên, mã đặt, phòng, mục đích..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên, mã đặt, phòng, mục đích..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
           <div className="bk-tabs">
             {['all','pending','approved','rejected'].map(s => (
               <button key={s} className={`bk-tab${filterStatus === s ? ' act' : ''}`} onClick={() => setFilterStatus(s)}>
                 {s !== 'all' && <StatusIcon status={s} sz={13} />}
                 {s === 'all' ? 'Tất cả' : statusLabel(s)}
-                <span className="tbadge">{s === 'all' ? bookings.length : countByStatus(s)}</span>
+                <span className="tbadge">{s === 'all' ? bookings.length : bookings.filter(b => b.status === s).length}</span>
               </button>
             ))}
           </div>
@@ -307,35 +405,39 @@ export default function BookingManagement() {
             <table className="bk-tbl">
               <thead>
                 <tr>
-                  <th style={{ textAlign:'center' }}>Họ tên</th>
+                  <th>Họ tên</th>
                   <th>Mã phòng</th>
                   <th>Ngày đặt</th>
                   <th>Giờ vào</th>
                   <th>Giờ ra</th>
                   <th style={{ textAlign:'center' }}>Số người</th>
-                  <th style={{ textAlign:'center' }}>Mục đích</th>
+                  <th>Mục đích</th>
                   <th>Trạng thái</th>
                   <th style={{ textAlign:'center', width:120 }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length > 0 ? filtered.map(b => (
+                {/* Loading */}
+                {loading && (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign:'center', padding:'48px 0' }}>
+                      <div className="bk-spinner"></div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Data rows */}
+                {!loading && filtered.length > 0 && filtered.map(b => (
                   <tr key={b.id} className={rowCls(b.status)}>
                     <td>
                       <div className="bk-name">{b.name}</div>
                       <div className="bk-sub">{b.code}</div>
                     </td>
                     <td><span className="bk-code">{b.roomCode}</span></td>
-                    <td>
-                      <div className="bk-time"><Calendar size={13}/>{b.date}</div>
-                    </td>
-                    <td>
-                      <div className="bk-time"><Clock size={13}/>{b.timeIn}</div>
-                    </td>
-                    <td>
-                      <div className="bk-time"><Clock size={13}/>{b.timeOut}</div>
-                    </td>
-                    <td style={{ textAlign:'right' }}>
+                    <td><div className="bk-time"><Calendar size={13}/>{b.date}</div></td>
+                    <td><div className="bk-time"><Clock size={13}/>{b.timeIn}</div></td>
+                    <td><div className="bk-time"><Clock size={13}/>{b.timeOut}</div></td>
+                    <td style={{ textAlign:'center' }}>
                       <div className="bk-people"><Users size={14}/>{b.people}</div>
                     </td>
                     <td><span style={{ color:'#475569' }}>{b.purpose}</span></td>
@@ -347,23 +449,31 @@ export default function BookingManagement() {
                     </td>
                     <td>
                       <div className="bk-acts">
-                        {/* View */}
-                        <button className="bk-abtn view" title="Xem chi tiết" onClick={() => setViewItem(b)}>
-                          <Eye size={15}/>
-                        </button>
-                        {/* Approve */}
                         <button className="bk-abtn approve" title="Duyệt" disabled={b.status !== 'pending'} onClick={() => setConfirmItem({ booking: b, action:'approve' })}>
                           <CheckCircle2 size={15}/>
                         </button>
-                        {/* Reject */}
                         <button className="bk-abtn reject" title="Từ chối" disabled={b.status !== 'pending'} onClick={() => { setRejectItem(b); setRejReason(REJECT_REASONS[0]); setRejNote(''); }}>
                           <XCircle size={15}/>
                         </button>
+                        <button className="bk-abtn reject" title="Từ chối" disabled={b.status !== 'pending'} onClick={() => { setRejectItem(b); setRejReason(REJECT_REASONS[0]); setRejNote(''); }}>
+                          <XCircle size={15}/>
+                        </button>
+                        <button className="bk-abtn view" title="Xem chi tiết" onClick={() => setViewItem(b)}>
+                          <Eye size={15}/>
+                        </button>
+                        
                       </div>
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={9} className="bk-empty"><Calendar size={38}/><br/>Không tìm thấy yêu cầu đặt phòng nào</td></tr>
+                ))}
+
+                {/* Empty */}
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="bk-empty">
+                      <Calendar size={38}/><br/>Không tìm thấy yêu cầu đặt phòng nào
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -380,13 +490,12 @@ export default function BookingManagement() {
               <button className="bk-mcl" onClick={() => setViewItem(null)}><X size={15}/></button>
             </div>
             <div className="bk-mb">
-              {/* Status badge prominent */}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
                 <span className={`bk-sbadge ${statusCls(viewItem.status)}`} style={{ fontSize:13, padding:'5px 12px' }}>
                   <StatusIcon status={viewItem.status} sz={15} />
                   {statusLabel(viewItem.status)}
                 </span>
-                <span style={{ fontSize:12, color:'#94a3b8' }}>Tạo lúc: {viewItem.createdAt}</span>
+                <span style={{ fontSize:12, color:'#94a3b8' }}>Ngày đặt: {viewItem.createdAt}</span>
               </div>
 
               <div className="bk-dg">
@@ -420,7 +529,6 @@ export default function BookingManagement() {
                 </div>
               </div>
 
-              {/* If rejected → show reason */}
               {viewItem.status === 'rejected' && viewItem.rejectedReason && (
                 <div className="bk-rej-box">
                   <div className="rb-title"><XCircle size={13}/> Lý do từ chối</div>
@@ -428,7 +536,31 @@ export default function BookingManagement() {
                 </div>
               )}
 
-              {/* Actions inside detail if still pending */}
+              {/* ── isUsed section: chỉ hiển thị khi status === approved ── */}
+              {viewItem.status === 'approved' && (
+                <div className="bk-used-box">
+                  <div className="ub-title"><CheckCircle2 size={12}/> Trạng thái sử dụng phòng</div>
+
+                  {/* Đã dùng → show badge */}
+                  {viewItem.isUsed ? (
+                    <div className="bk-used-badge">
+                      <CheckCircle2 size={18}/>
+                      <span>Phòng đã được sử dụng</span>
+                    </div>
+                  ) : (
+                    // Chưa dùng → show 2 nút
+                    <div className="bk-used-btns">
+                      <button className="bk-used-btn cancel" onClick={() => setViewItem(null)}>
+                        <XCircle size={15}/> Không dùng
+                      </button>
+                      <button className="bk-used-btn confirm" onClick={() => markAsUsed(viewItem.id)}>
+                        <CheckCircle2 size={15}/> Xác nhận dùng phòng
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {viewItem.status === 'pending' && (
                 <div className="bk-fac">
                   <button className="bk-bsb btn-reject" onClick={() => { setRejectItem(viewItem); setRejReason(REJECT_REASONS[0]); setRejNote(''); }}>
@@ -453,7 +585,6 @@ export default function BookingManagement() {
               <button className="bk-mcl" onClick={() => setRejectItem(null)}><X size={15}/></button>
             </div>
             <div className="bk-mb">
-              {/* mini booking info */}
               <div style={{ background:'#f8fafc', border:'1px solid #f1f5f9', borderRadius:10, padding:'12px 14px', marginBottom:18, display:'flex', gap:24, flexWrap:'wrap' }}>
                 <div><span style={{ fontSize:11, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.04em', fontWeight:600 }}>Người đặt</span><br/><span style={{ fontSize:13, fontWeight:600, color:'#1e293b' }}>{rejectItem.name}</span></div>
                 <div><span style={{ fontSize:11, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.04em', fontWeight:600 }}>Phòng</span><br/><span style={{ fontSize:13, fontWeight:600, color:'#6366f1', fontFamily:"'JetBrains Mono',monospace" }}>{rejectItem.roomCode}</span></div>
@@ -490,7 +621,12 @@ export default function BookingManagement() {
             <div className="bk-mb">
               <div className="bk-confirm-icon ci-approve"><CheckCircle2 size={26}/></div>
               <h4>Duyệt đặt phòng?</h4>
-              <p>Bạn sẽ duyệt yêu cầu đặt phòng <strong style={{ color:'#1e293b' }}>{confirmItem.booking.code}</strong> của <strong style={{ color:'#1e293b' }}>{confirmItem.booking.name}</strong> cho phòng <strong style={{ color:'#6366f1' }}>{confirmItem.booking.roomCode}</strong> vào ngày {confirmItem.booking.date}, từ {confirmItem.booking.timeIn} đến {confirmItem.booking.timeOut}.</p>
+              <p>
+                Bạn sẽ duyệt yêu cầu đặt phòng <strong style={{ color:'#1e293b' }}>{confirmItem.booking.code}</strong> của{' '}
+                <strong style={{ color:'#1e293b' }}>{confirmItem.booking.name}</strong> cho phòng{' '}
+                <strong style={{ color:'#6366f1' }}>{confirmItem.booking.roomCode}</strong> vào ngày {confirmItem.booking.date},{' '}
+                từ {confirmItem.booking.timeIn} đến {confirmItem.booking.timeOut}.
+              </p>
               <div className="bk-fac">
                 <button className="bk-bcn" onClick={() => setConfirmItem(null)}>Hủy</button>
                 <button className="bk-bsb btn-approve" onClick={() => approve(confirmItem.booking.id)}>
