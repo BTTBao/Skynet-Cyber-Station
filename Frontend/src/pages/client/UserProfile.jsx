@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import './UserProfile.css';
 
 // --- Cấu hình API URL ---
-const API_BASE_URL = "https://localhost:7140/api"; // Sửa lại port theo backend của bạn
+const API_BASE_URL = "https://localhost:7140/api"; 
 
-// --- Icon SVG (Giữ nguyên) ---
+// --- Icon SVG ---
 const Icons = {
   User: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>,
   Mail: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>,
@@ -13,21 +13,29 @@ const Icons = {
   Calendar: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
   Invoice: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 2.072c.675-.25 1.25.07 1.5.317" /></svg>,
   Report: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
-  Save: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  Save: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  // --- MỚI: Icon Ổ khóa ---
+  Lock: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
 };
 
-const UserProfile = () => {
+const UserProfile = ({ userId }) => {
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
-  // Giả lập lấy ID người dùng hiện tại (Trong thực tế lấy từ localStorage/Token)
-  const currentUserId = 2; 
+  // --- MỚI: State cho đổi mật khẩu ---
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  // --- 1. Fetch Data từ API ---
+  // --- 1. Fetch Data ---
   useEffect(() => {
-    fetch(`${API_BASE_URL}/Users/${currentUserId}`)
+    if (!userId) return; 
+
+    fetch(`${API_BASE_URL}/Users/${userId}`) 
       .then(response => {
         if (!response.ok) {
           throw new Error('Không thể tải dữ liệu người dùng.');
@@ -35,7 +43,6 @@ const UserProfile = () => {
         return response.json();
       })
       .then(data => {
-        // Data trả về khớp với UserProfileDto trong C#
         setUser(data);
         setLoading(false);
       })
@@ -44,13 +51,12 @@ const UserProfile = () => {
         setError(err.message);
         setLoading(false);
       });
-  }, [currentUserId]);
+  }, [userId]);
 
-  // --- 2. Xử lý Update Data ---
+  // --- 2. Xử lý Update Info ---
   const handleSave = async (e) => {
-    e.preventDefault(); // Ngăn reload trang
+    e.preventDefault(); 
     
-    // DTO để gửi lên server (UpdateUserProfileDto)
     const updateData = {
       fullName: user.fullName,
       email: user.email,
@@ -77,9 +83,58 @@ const UserProfile = () => {
     }
   };
 
+  // --- MỚI: 3. Xử lý đổi mật khẩu ---
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("❌ Mật khẩu mới và xác nhận mật khẩu không khớp!");
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+        alert("❌ Mật khẩu mới phải có ít nhất 6 ký tự!");
+        return;
+    }
+
+    // Payload gửi đi (Bạn cần kiểm tra Backend nhận model gì)
+    // Giả định backend cần: { userId, currentPassword, newPassword }
+    const payload = {
+      userId: user.userId,
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    };
+
+    try {
+      // Giả định đường dẫn API đổi mật khẩu
+      const response = await fetch(`${API_BASE_URL}/Users/change-password`, {
+        method: 'POST', // Thường là POST hoặc PUT
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert("✅ Đổi mật khẩu thành công!");
+        // Reset form
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        alert(`❌ Lỗi: ${errData.message || "Mật khẩu hiện tại không đúng hoặc lỗi hệ thống."}`);
+      }
+    } catch (error) {
+      alert("❌ Lỗi kết nối đến server.");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUser(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordInput = (e) => {
+      const { name, value } = e.target;
+      setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
   const renderStatusBadge = (status) => {
@@ -99,10 +154,9 @@ const UserProfile = () => {
   if (error) return <div className="profile-wrapper"><h3 style={{color: 'red'}}>Lỗi: {error}</h3></div>;
   if (!user) return null;
 
-  // Tính toán thống kê
   const totalSpent = user.invoices
     .filter(i => i.status === 'Paid')
-    .reduce((sum, item) => sum + item.totalAmount, 0); // Model C# là TotalAmount
+    .reduce((sum, item) => sum + item.totalAmount, 0);
 
   const pendingInvoices = user.invoices.filter(i => i.status !== 'Paid').length;
 
@@ -127,7 +181,6 @@ const UserProfile = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* API trả về roomBookings (chữ thường đầu) */}
                   {user.roomBookings.length === 0 ? (
                     <tr><td colSpan="5" style={{textAlign:'center'}}>Chưa có dữ liệu</td></tr>
                   ) : (
@@ -136,8 +189,8 @@ const UserProfile = () => {
                         <td style={{fontWeight: 'bold', color: 'var(--primary)'}}>
                           {bk.roomName}
                         </td>
-                        <td>{bk.date}</td> {/* String dd/MM/yyyy từ API */}
-                        <td>{bk.timeRange}</td> {/* String HH:mm - HH:mm từ API */}
+                        <td>{bk.date}</td>
+                        <td>{bk.timeRange}</td>
                         <td>{bk.purpose || '-'}</td>
                         <td>{renderStatusBadge(bk.status)}</td>
                       </tr>
@@ -227,6 +280,73 @@ const UserProfile = () => {
               </table>
             </div>
           </>
+        );
+
+      // --- MỚI: Case cho Đổi mật khẩu ---
+      case 'changepassword':
+        return (
+            <>
+            <div className="card-header">
+                <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
+            </div>
+            <div className="card-body">
+                <form onSubmit={handleChangePassword}>
+                <div className="form-grid">
+                    <div className="form-group full-width">
+                        <label className="label">Mật khẩu hiện tại</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="currentPassword" 
+                                className="input-field" 
+                                placeholder="Nhập mật khẩu cũ"
+                                value={passwordData.currentPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Mật khẩu mới</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="newPassword" 
+                                className="input-field" 
+                                placeholder="Nhập mật khẩu mới"
+                                value={passwordData.newPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Xác nhận mật khẩu mới</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">{Icons.Lock}</span>
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                className="input-field" 
+                                placeholder="Nhập lại mật khẩu mới"
+                                value={passwordData.confirmPassword} 
+                                onChange={handlePasswordInput} 
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" className="btn-save">
+                    {Icons.Save} Xác nhận đổi
+                </button>
+                </form>
+            </div>
+            </>
         );
 
       case 'info':
@@ -336,6 +456,10 @@ const UserProfile = () => {
               </div>
               <div className={`menu-item ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
                 {Icons.Report} Báo cáo sự cố
+              </div>
+              {/* --- MỚI: Menu item Đổi mật khẩu --- */}
+              <div className={`menu-item ${activeTab === 'changepassword' ? 'active' : ''}`} onClick={() => setActiveTab('changepassword')}>
+                {Icons.Lock} Đổi mật khẩu
               </div>
             </div>
           </div>

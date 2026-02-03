@@ -2,8 +2,13 @@
 using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Backend.Controllers
@@ -14,12 +19,114 @@ namespace Backend.Controllers
     {
         // Thay QuanLyPhongMayContext bằng tên Context thực tế trong file Program.cs của bạn
         private readonly QuanLyPhongMayContext _context;
+        private readonly IConfiguration _configuration;
 
-        public UsersController(QuanLyPhongMayContext context)
+        // Inject thêm IConfiguration vào Constructor
+        public UsersController(QuanLyPhongMayContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
+        [HttpPost("login")]
+        public async Task<ActionResult<object>> Login([FromBody] LoginDto loginReq)
+        {
+            // 1. Tìm user trong DB
+            var user = await _context.Users
+                .Include(u => u.Role) // Load Role để phân quyền
+                .FirstOrDefaultAsync(u => u.Username == loginReq.Username);
 
+            // 2. Kiểm tra User và Password
+            // Lưu ý: Tạm thời so sánh trực tiếp. Nên dùng Hash trong thực tế.
+            if (user == null || user.PasswordHash != loginReq.Password)
+            {
+                return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
+            }
+
+            // 3. Tạo Token (JWT)
+            var token = GenerateJwtToken(user);
+
+            // 4. Trả về Token + Thông tin User (để React lưu)
+            return Ok(new
+            {
+                token = token,
+                user = new
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Role = user.Role?.RoleName ?? "User",
+                    Email = user.Email
+                }
+            });
+        }
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+        {
+            // 1. Tìm User trong database
+            var user = await _context.Users.FindAsync(request.UserId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Không tìm thấy người dùng." });
+            }
+
+            // 2. Kiểm tra mật khẩu hiện tại
+            // LƯU Ý: Nếu database lưu mật khẩu mã hóa, hãy Hash(request.CurrentPassword) trước khi so sánh
+            if (user.PasswordHash != request.CurrentPassword)
+            {
+                return BadRequest(new { message = "Mật khẩu hiện tại không chính xác." });
+            }
+
+            // 3. Kiểm tra mật khẩu mới (Validation đơn giản)
+            if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return BadRequest(new { message = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+            }
+
+            // 4. Cập nhật mật khẩu mới
+            // LƯU Ý: Nếu dùng bảo mật, hãy Hash(request.NewPassword) trước khi gán
+            user.PasswordHash = request.NewPassword;
+
+            try
+            {
+                // 5. Lưu xuống Database
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Đổi mật khẩu thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+        // Hàm phụ trợ để tạo Token
+        private string GenerateJwtToken(User user)
+        {
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
+                new Claim("FullName", user.FullName ?? "")
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(2), // Token sống 2 tiếng
+                Issuer = jwtSettings["Issuer"],
+                Audience = jwtSettings["Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
         // GET: api/Users/5
         [HttpGet("{id}")]
         public async Task<ActionResult<UserProfileDto>> GetUserProfile(int id)
