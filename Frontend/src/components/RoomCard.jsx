@@ -35,11 +35,6 @@ export const RoomCard = ({
                     alt={room.name}
                     className="w-full h-full object-cover"
                 />
-                {isRecommended && (
-                    <div className="absolute top-2 right-2 bg-[#facb01] text-[#271756] text-xs px-2 py-1 rounded-full flex items-center shadow-lg font-bold">
-                        <CheckCircle size={12} className="mr-1" /> Gợi ý bởi AI
-                    </div>
-                )}
                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                     {room.machineCount} máy
                 </div>
@@ -77,12 +72,6 @@ export const RoomCard = ({
                         className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                         Chi tiết
-                    </button>
-                    <button
-                        onClick={() => onBook(room)}
-                        className="flex-1 px-3 py-2 text-sm font-medium text-white bg-[#271756] rounded-lg hover:bg-[#271756]/90 transition-colors"
-                    >
-                        {userRole === UserRole.LECTURER ? "Mượn phòng" : "Thuê ngay"}
                     </button>
                 </div>
             </div>

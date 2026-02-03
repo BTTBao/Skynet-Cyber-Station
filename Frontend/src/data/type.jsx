@@ -1,6 +1,6 @@
 export const UserRole = {
-  LECTURER: 'LECTURER',
-  STUDENT: 'STUDENT',
+  LECTURER: 'Giảng viên',
+  STUDENT: 'Sinh viên',
   GUEST: 'GUEST'
 };
 
@@ -8,9 +8,11 @@ export const UserRole = {
  * Trạng thái đặt phòng (Tách ra từ Interface Booking để dễ dùng lại)
  */
 export const BookingStatus = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
+  COMPLETED: 'Completed'
 };
 
 /**
@@ -27,6 +29,6 @@ export const IssueSeverity = {
  */
 export const IssueStatus = {
   OPEN: 'OPEN',
-  IN_PROGRESS: 'IN_PROGRESS',
-  RESOLVED: 'RESOLVED'
+  IN_PROGRESS: 'In Progress',
+  RESOLVED: 'Resolved'
 };

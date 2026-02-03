@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { MOCK_ROOMS, MOCK_USERS } from "../../data/constants"
+import React, { useState, useEffect } from "react"
+import { MOCK_USERS } from "../../data/constants"
 import { UserRole } from "../../data/type"
 import { BookingModal } from "../../components/BookingModal"
 import { ReportModal } from "../../components/ReportModal"
@@ -10,11 +10,17 @@ import { RoomsView } from "../../components/home/RoomsView"
 import { BookingsView } from "../../components/home/BookingsView"
 import { ReportsView } from "../../components/home/ReportsView"
 import { format } from "date-fns"
+import { RoomService } from "../../services/RoomService"
 
 const Home = () => {
     // State Management
     const [currentUser, setCurrentUser] = useState(MOCK_USERS[0])
     const [activeTab, setActiveTab] = useState("rooms")
+
+    // Room data từ API
+    const [rooms, setRooms] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
 
     const [bookings, setBookings] = useState([])
     const [reports, setReports] = useState([])
@@ -34,6 +40,26 @@ const Home = () => {
     const [isReportOpen, setIsReportOpen] = useState(false)
     const [reportingRoom, setReportingRoom] = useState(null)
 
+    // Load danh sách phòng từ API khi component mount
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                setLoading(true)
+                const data = await RoomService.getAllRooms()
+                setRooms(data)
+                setError(null)
+            } catch (err) {
+                console.error('Lỗi khi tải danh sách phòng:', err)
+                setError('Không thể tải danh sách phòng. Vui lòng kiểm tra kết nối đến server.')
+                setRooms([]) // Fallback về array rỗng
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRooms()
+    }, [])
+
     // Handlers
     const handleCalendarNavClick = () => {
         setActiveTab("calendar")
@@ -51,7 +77,7 @@ const Home = () => {
     }
 
     const handleCalendarSlotSelect = (date, hour) => {
-        let targetRoom = MOCK_ROOMS.find(r => r.id === calendarSelectedRoomId)
+        let targetRoom = rooms.find(r => r.id === calendarSelectedRoomId)
 
         if (!targetRoom && calendarSelectedRoomId === "all") {
             alert("Vui lòng chọn một phòng cụ thể từ menu thả xuống trước khi chọn giờ.")
@@ -102,7 +128,7 @@ const Home = () => {
     }
 
     // Filter Logic
-    const filteredRooms = MOCK_ROOMS.filter(room => {
+    const filteredRooms = rooms.filter(room => {
         if (recommendedRoomIds.length > 0) {
             return recommendedRoomIds.includes(room.id)
         }
@@ -140,8 +166,35 @@ const Home = () => {
 
                 {/* Content Body */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-center">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                <p className="mt-4 text-gray-600">Đang tải dữ liệu phòng...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Error State */}
+                    {error && !loading && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <div className="flex items-start">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-sm font-medium text-red-800">Lỗi tải dữ liệu</h3>
+                                    <p className="mt-1 text-sm text-red-700">{error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ROOMS VIEW */}
-                    {activeTab === "rooms" && (
+                    {!loading && activeTab === "rooms" && (
                         <RoomsView
                             searchQuery={searchQuery}
                             setSearchQuery={setSearchQuery}
@@ -154,26 +207,27 @@ const Home = () => {
                     )}
 
                     {/* CALENDAR VIEW */}
-                    {activeTab === "calendar" && (
+                    {!loading && activeTab === "calendar" && (
                         <RoomCalendar
                             bookings={bookings}
-                            rooms={MOCK_ROOMS}
+                            rooms={rooms}
                             preSelectedRoomId={calendarSelectedRoomId}
                             onSelectSlot={handleCalendarSlotSelect}
                         />
                     )}
 
                     {/* BOOKINGS VIEW */}
-                    {activeTab === "bookings" && (
+                    {!loading && activeTab === "bookings" && (
                         <BookingsView
                             myBookings={myBookings}
                             setActiveTab={setActiveTab}
                             onReportIssue={handleReportIssue}
+                            rooms={rooms}
                         />
                     )}
 
                     {/* REPORTS VIEW */}
-                    {activeTab === "reports" && <ReportsView reports={reports} />}
+                    {!loading && activeTab === "reports" && <ReportsView reports={reports} rooms={rooms} />}
                 </div>
             </main>
 
