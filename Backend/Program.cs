@@ -88,6 +88,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // DB Context
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddDbContext<QuanLyPhongMayContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
