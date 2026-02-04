@@ -1,18 +1,9 @@
 import React from "react"
-import { CheckCircle2, Sparkles } from "lucide-react"
+import { CheckCircle2, FileText } from "lucide-react"
 
 export const ReportsView = ({ reports, rooms = [] }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-[#271756]/5 border border-[#271756]/10 p-4 rounded-xl flex gap-3">
-                <Sparkles className="text-[#facb01] flex-shrink-0" />
-                <p className="text-sm text-[#271756]">
-                    Hệ thống sử dụng AI để tự động phân tích mức độ nghiêm trọng
-                    của sự cố bạn báo cáo, giúp bộ phận kỹ thuật ưu tiên xử lý
-                    nhanh chóng.
-                </p>
-            </div>
-
             {reports.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
                     <CheckCircle2
@@ -22,11 +13,13 @@ export const ReportsView = ({ reports, rooms = [] }) => {
                     <h3 className="text-lg font-medium text-gray-900">
                         Không có sự cố nào
                     </h3>
-                    <p className="text-gray-500">Mọi thứ đang hoạt động tốt!</p>
+                    <p className="text-gray-500">Hệ thống đang hoạt động ổn định!</p>
                 </div>
             ) : (
                 reports.map(report => {
-                    const room = rooms.find(r => r.id === report.roomId)
+                    // Nếu backend đã trả về roomName thì dùng luôn, không thì tìm trong mảng rooms
+                    const roomName = report.title || rooms.find(r => r.id === report.roomId)?.name || `Phòng ${report.roomId}`;
+
                     return (
                         <div
                             key={report.id}
@@ -35,51 +28,25 @@ export const ReportsView = ({ reports, rooms = [] }) => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h3 className="font-bold text-gray-900 text-lg flex items-center">
-                                        {room?.name}
-                                        <span
-                                            className={`ml-3 px-2 py-0.5 rounded text-xs uppercase ${report.severity === "HIGH"
-                                                ? "bg-red-100 text-red-700"
-                                                : report.severity === "MEDIUM"
-                                                    ? "bg-amber-100 text-amber-700"
-                                                    : "bg-blue-100 text-blue-700"
-                                                }`}
-                                        >
-                                            {report.severity === "HIGH"
-                                                ? "Nghiêm trọng"
-                                                : report.severity === "MEDIUM"
-                                                    ? "Trung bình"
-                                                    : "Thấp"}
-                                        </span>
+                                        {roomName}
                                     </h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        {new Date(report.timestamp).toLocaleString()}
-                                    </p>
                                 </div>
-                                <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                                    {report.status === "OPEN"
-                                        ? "Đang chờ xử lý"
-                                        : "Đã tiếp nhận"}
+                                <span className={`px-3 py-1 text-xs rounded-full font-medium ${report.status === "OPEN"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-green-100 text-green-700"
+                                    }`}>
+                                    {report.status === "OPEN" ? "Đang chờ xử lý" : "Đã giải quyết"}
                                 </span>
                             </div>
-                            <div className="space-y-3">
+
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex gap-3">
+                                <FileText size={18} className="text-gray-400 flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <span className="text-xs font-semibold text-gray-500 uppercase">
-                                        Mô tả của bạn:
+                                    <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                        Mô tả sự cố:
                                     </span>
-                                    <p className="text-gray-800 mt-1">
+                                    <p className="text-gray-800 text-sm">
                                         {report.description}
-                                    </p>
-                                </div>
-                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                    <span className="text-xs font-semibold text-[#271756] uppercase flex items-center mb-1">
-                                        <Sparkles
-                                            size={12}
-                                            className="mr-1 text-[#facb01]"
-                                        />{" "}
-                                        Phân tích AI:
-                                    </span>
-                                    <p className="text-sm text-gray-700">
-                                        {report.aiAnalysis}
                                     </p>
                                 </div>
                             </div>

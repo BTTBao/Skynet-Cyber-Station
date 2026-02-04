@@ -68,7 +68,7 @@ export const Sidebar = ({
                         }`}
                 >
                     <CalendarIcon size={20} />
-                    <span>Lịch đặt của tôi</span>
+                    <span>Lịch sử đã đặt</span>
                     {myBookingsCount > 0 && (
                         <span className="ml-auto bg-[#facb01] text-[#271756] font-bold text-xs px-2 py-0.5 rounded-full">
                             {myBookingsCount}
@@ -127,9 +127,9 @@ export const Sidebar = ({
                                     </p>
                                 </div>
                             </div>
-                            
+
                             {/* Dropdown đổi vai (Debug) */}
-                            <select
+                            {/* <select
                                 className="w-full text-xs p-1 border rounded bg-white"
                                 onChange={e => {
                                     const user = MOCK_USERS.find(u => u.id === e.target.value)
@@ -142,7 +142,7 @@ export const Sidebar = ({
                                         Đổi vai: {u.name}
                                     </option>
                                 ))}
-                            </select>
+                            </select> */}
                         </div>
 
                         <button

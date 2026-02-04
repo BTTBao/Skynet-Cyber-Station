@@ -13,6 +13,7 @@ import { format } from "date-fns"
 import { RoomService } from "../../services/RoomService"
 import { BookingService } from "../../services/BookingService"
 import { useNavigate } from "react-router-dom"
+import { ReportService } from "../../services/ReportService"
 
 const Home = () => {
     const navigate = useNavigate()
@@ -33,6 +34,9 @@ const Home = () => {
     const [searchQuery, setSearchQuery] = useState("")
     const [recommendedRoomIds, setRecommendedRoomIds] = useState([])
 
+    // --- THAY ĐỔI 1: Chuyển myBookings thành State ---
+    const [myBookings, setMyBookings] = useState([])
+
     // Interaction State
     const [viewingRoomDetail, setViewingRoomDetail] = useState(null)
     const [calendarSelectedRoomId, setCalendarSelectedRoomId] = useState("all")
@@ -42,34 +46,55 @@ const Home = () => {
     const [isReportOpen, setIsReportOpen] = useState(false)
     const [reportingRoom, setReportingRoom] = useState(null)
 
-    // Load danh sách phòng từ API khi component mount
+    // --- THAY ĐỔI 2: Cập nhật useEffect để load dữ liệu ---
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true)
-                
-                // Gọi song song cả 2 API: Lấy phòng và Lấy lịch đặt
-                const [roomsData, bookingsData] = await Promise.all([
-                    RoomService.getAllRooms(),
-                    BookingService.getAllBookings()
-                ]);
 
-                setRooms(roomsData);
-                setBookings(bookingsData); // Cập nhật state bookings từ API
-                
+                // Chuẩn bị các promise cần gọi
+                const promises = [
+                    RoomService.getAllRooms(),     // Index 0: Lấy phòng
+                    BookingService.getAllBookings() // Index 1: Lấy lịch tổng cho Calendar
+                ];
+
+                // Nếu đã đăng nhập, gọi thêm API lấy lịch sử cá nhân
+                const userId = currentUser?.id || currentUser?.userId;
+                if (userId) {
+                    promises.push(BookingService.getBookingHistory(userId)); // Index 2 (nếu có)
+                    promises.push(ReportService.getReportsByUserId(userId));
+                }
+
+                // Chạy song song
+                const results = await Promise.all(promises);
+
+                setRooms(results[0]);
+                setBookings(results[1]);
+
+                // Nếu có kết quả thứ 3 (Lịch sử cá nhân) thì set vào state
+                if (userId && results[2]) {
+                    setMyBookings(results[2]);
+                    setReports(results[3] || []);
+                } else {
+                    setMyBookings([]);
+                    setReports([]);
+                }
+
                 setError(null);
             } catch (err) {
                 console.error('Lỗi khi tải dữ liệu hệ thống:', err);
                 setError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối.');
+                // Fallback data
                 setRooms([]);
                 setBookings([]);
+                setMyBookings([]);
             } finally {
                 setLoading(false);
             }
         }
 
         fetchData();
-    }, [])
+    }, [currentUser])
 
     // Handlers
     const handleCalendarNavClick = () => {
@@ -109,14 +134,25 @@ const Home = () => {
         }
     }
 
-    const confirmBooking = bookingData => {
+    // Handler confirmBooking cần cập nhật cả 2 state để UI đồng bộ ngay lập tức
+    const confirmBooking = (bookingData) => {
+        // Tạo object booking giả lập để hiện ngay trên UI mà không cần reload trang
         const newBooking = {
             ...bookingData,
             id: Math.random().toString(36).substr(2, 9),
-            // Dùng ?. để tránh lỗi nếu currentUser null
-            status: currentUser?.role === UserRole.LECTURER ? "APPROVED" : "PENDING"
+            status: currentUser?.role === "LECTURER" ? "APPROVED" : "PENDING",
+            // Mapping lại field cho khớp với format API lịch sử mới (nếu cần hiển thị ngay)
+            startHour: bookingData.startTime,
+            endHour: bookingData.endTime,
+            roomName: bookingData.roomName || rooms.find(r => r.id === bookingData.roomId)?.name
         }
-        setBookings([...bookings, newBooking])
+
+        // Cập nhật vào lịch tổng (Calendar)
+        setBookings(prev => [...prev, newBooking])
+
+        // Cập nhật vào lịch cá nhân (My Bookings)
+        setMyBookings(prev => [newBooking, ...prev]) // Đưa lên đầu danh sách
+
         setActiveTab("bookings")
     }
 
@@ -129,22 +165,34 @@ const Home = () => {
         setIsReportOpen(true)
     }
 
-    const confirmReport = (roomId, description, aiAnalysis) => {
-        const newReport = {
-            id: Math.random().toString(36).substr(2, 9),
-            roomId,
-            userId: currentUser?.id || currentUser?.userId,
-            description,
-            aiAnalysis,
-            severity: aiAnalysis.includes("CAO")
-                ? "HIGH"
-                : aiAnalysis.includes("TRUNG BÌNH")
-                    ? "MEDIUM"
-                    : "LOW",
-            status: "OPEN",
-            timestamp: Date.now()
+    const confirmReport = async (roomId, description) => {
+        try {
+            // Chuẩn hóa dữ liệu: Ép kiểu Number để tránh lỗi 400 Bad Request
+            const reportPayload = {
+                userId: Number(currentUser?.id || currentUser?.userId),
+                roomId: Number(roomId),
+                description: description
+            }
+
+            // Gọi API
+            await ReportService.createReport(reportPayload);
+
+            // Cập nhật UI ngay lập tức (Optimistic Update)
+            // Lưu ý: Tạo title giả lập khớp với logic backend
+            const newReportUI = {
+                id: Math.random(),
+                title: `Sự cố phòng ${roomId}`,
+                description: description,
+                status: "OPEN",
+                timestamp: new Date().toISOString()
+            };
+
+            setReports([newReportUI, ...reports]);
+            alert("Gửi báo cáo thành công!");
+        } catch (error) {
+            console.error("Lỗi gửi báo cáo:", error);
+            alert("Gửi báo cáo thất bại. Vui lòng thử lại.");
         }
-        setReports([...reports, newReport])
     }
 
     // 2. XỬ LÝ ĐĂNG XUẤT
@@ -166,9 +214,6 @@ const Home = () => {
         }
         return room.name.toLowerCase().includes(searchQuery.toLowerCase())
     })
-
-    // Chỉ lọc booking nếu có user
-    const myBookings = bookings.filter(b => b.userId === (currentUser?.id || currentUser?.userId))
 
     return (
         <div className="flex h-screen bg-gray-50">

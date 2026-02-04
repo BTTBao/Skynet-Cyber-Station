@@ -3,24 +3,13 @@ import { AlertTriangle, Sparkles, Send, Loader2 } from "lucide-react"
 
 export const ReportModal = ({ isOpen, onClose, room, onSubmit }) => {
     const [description, setDescription] = useState("")
-    const [isAnalyzing, setIsAnalyzing] = useState(false)
-    const [analysis, setAnalysis] = useState(null)
 
     if (!isOpen || !room) return null
 
-    const handleAnalyze = async () => {
-        if (!description.trim()) return
-        setIsAnalyzing(true)
-        const result = await analyzeIssueReport(description, room.name)
-        setAnalysis(result)
-        setIsAnalyzing(false)
-    }
-
     const handleSubmit = () => {
-        if (description && analysis) {
-            onSubmit(room.id, description, analysis)
+        if (description) {
+            onSubmit(room.id, description)
             setDescription("")
-            setAnalysis(null)
             onClose()
         }
     }
@@ -53,22 +42,14 @@ export const ReportModal = ({ isOpen, onClose, room, onSubmit }) => {
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#facb01] min-h-[120px] outline-none mb-4"
                 />
 
-                {analysis && (
-                    <div className="flex gap-3 mt-4">
-                        <button
-                            onClick={() => setAnalysis(null)}
-                            className="flex-1 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                        >
-                            Chỉnh sửa
-                        </button>
-                        <button
-                            onClick={handleSubmit}
-                            className="flex-1 py-2 bg-[#facb01] text-[#271756] rounded-lg hover:bg-[#facb01]/80 flex items-center justify-center font-bold shadow-lg shadow-[#facb01]/30 transition-colors"
-                        >
-                            <Send size={18} className="mr-2" /> Gửi báo cáo
-                        </button>
-                    </div>
-                )}
+                <div className="flex gap-3 mt-4">
+                    <button
+                        onClick={handleSubmit}
+                        className="flex-1 py-2 bg-[#facb01] text-[#271756] rounded-lg hover:bg-[#facb01]/80 flex items-center justify-center font-bold shadow-lg shadow-[#facb01]/30 transition-colors"
+                    >
+                        <Send size={18} className="mr-2" /> Gửi báo cáo
+                    </button>
+                </div>
             </div>
         </div>
     )
