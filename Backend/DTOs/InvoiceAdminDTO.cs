@@ -31,4 +31,12 @@
         public DateTime EndTime { get; set; }
         public string Purpose { get; set; }
     }
+    public class CreateInvoiceDto
+    {
+        public int BookingID { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal? Deposit { get; set; }
+        public string Status { get; set; } // "Pending", "Paid", "Cancelled"
+        public DateTime? PaymentDate { get; set; }
+    }
 }

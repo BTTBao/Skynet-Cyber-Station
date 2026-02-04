@@ -8,12 +8,14 @@ public partial class IncidentReport
     public int ReportId { get; set; }
 
     public int UserId { get; set; }
-
-    public string Title { get; set; } = null!;
+    public int RoomId { get; set; }
 
     public string Description { get; set; } = null!;
+
+    public DateTime? ReportDate { get; set; }
 
     public string? Status { get; set; }
 
     public virtual User User { get; set; } = null!;
+    public virtual Room Room { get; set; } = null!;
 }

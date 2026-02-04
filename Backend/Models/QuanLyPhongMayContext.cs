@@ -65,13 +65,19 @@ public partial class QuanLyPhongMayContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("not yet processed");
-            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.ReportDate).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.RoomId).HasColumnName("RoomID");
 
             entity.HasOne(d => d.User).WithMany(p => p.IncidentReports)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__IncidentR__UserI__59063A47");
+                
+            entity.HasOne(d => d.Room).WithMany(p => p.IncidentReports)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__IncidentR__RoomI__59063A48");
         });
 
         modelBuilder.Entity<Invoice>(entity =>

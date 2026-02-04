@@ -7,6 +7,7 @@ namespace Backend.DTOs
     {
         public int Id { get; set; }                 // BookingId
         public string Code { get; set; }            // "BK-" + BookingId (generate trong service)
+        public decimal Price { get; set; }            // "BK-" + BookingId (generate trong service)
         public string Name { get; set; }            // User.FullName
         public string RoomCode { get; set; }        // Room.RoomCode
         public string Date { get; set; }            // BookingDate → "dd/MM/yyyy"
@@ -18,6 +19,7 @@ namespace Backend.DTOs
         public string RejectedReason { get; set; }  // RejectionReason (null nếu chưa reject)
         public string CreatedAt { get; set; }       // BookingDate fallback → "dd/MM/yyyy"
         public bool IsUsed { get; set; }            // true nếu phòng đã được sử dụng
+        public bool IsBillCreated { get; set; }
     }
 
     // ─── Request DTO: body gửi khi từ chối ───────────────────────────────
@@ -36,4 +38,10 @@ namespace Backend.DTOs
         public int Approved { get; set; }
         public int Rejected { get; set; }
     }
+
+    public class MarkAsUsedDto
+    {
+        public bool IsUsed { get; set; }
+    }
+
 }
