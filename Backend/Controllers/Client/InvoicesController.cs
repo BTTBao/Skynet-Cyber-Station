@@ -92,35 +92,46 @@ namespace Backend.Controllers
             int currentUserId = GetCurrentUserId();
             if (currentUserId == 0) return Unauthorized();
 
-            // Lấy hóa đơn
+            // 1. Lấy hóa đơn kèm theo Booking
             var invoice = await _context.Invoices
                 .Include(i => i.User)
-                .Include(i => i.Booking).ThenInclude(b => b.Room)
+                .Include(i => i.Booking).ThenInclude(b => b.Room) // Đã include Booking ở đây
                 .FirstOrDefaultAsync(i => i.InvoiceId == id);
 
             if (invoice == null) return NotFound(new { message = "Không tìm thấy hóa đơn" });
 
-            // --- BẢO MẬT: QUAN TRỌNG NHẤT ---
-            // Phải kiểm tra xem người đang gọi API có phải chủ hóa đơn không
+            // 2. BẢO MẬT
             if (invoice.UserId != currentUserId && !User.IsInRole("Admin"))
             {
                 return StatusCode(403, new { message = "Bạn không có quyền thanh toán hóa đơn này." });
             }
-            // ---------------------------------
 
             if (invoice.Status == "Paid") return BadRequest(new { message = "Hóa đơn này đã được thanh toán rồi." });
 
-            // Xử lý thanh toán (Nên dùng Transaction nếu có trừ tiền trong tài khoản ví)
+            // 3. Xử lý thanh toán
             invoice.Status = "Paid";
             invoice.PaymentDate = DateTime.Now;
 
-            // Lưu xuống DB
+            // --- THÊM MỚI: Cập nhật trạng thái Booking ---
+            if (invoice.Booking != null)
+            {
+                // Chuyển trạng thái Booking sang Approved
+                invoice.Booking.Status = "Approved";
+            }
+            // ---------------------------------------------
+
+            // 4. Lưu xuống DB (Lưu cả Invoice và Booking cùng lúc)
             await _context.SaveChangesAsync();
 
-            // Gửi email (Giữ nguyên logic của bạn)
-            _ = SendPaymentEmailAsync(invoice); // Gọi async không cần await để trả response nhanh hơn
+            // 5. Gửi email
+            _= SendPaymentEmailAsync(invoice);
 
-            return Ok(new { message = "Thanh toán thành công", paymentDate = invoice.PaymentDate });
+            return Ok(new
+            {
+                message = "Thanh toán thành công",
+                paymentDate = invoice.PaymentDate,
+                bookingStatus = invoice.Booking?.Status // Trả về để Frontend biết
+            });
         }
 
         // ==========================================

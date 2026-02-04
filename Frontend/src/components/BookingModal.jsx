@@ -7,7 +7,7 @@ import { BookingSummary } from "./booking/BookingSummary"
 import { BookingService } from "../services/BookingService"
 import { BookingConfig, BookingHelpers } from "../data/bookingConfig"
 
-const API_BASE_URL = "https://localhost:7140/api";
+const API_BASE_URL = "https://localhost:7140/api/client";
 
 export const BookingModal = ({
     isOpen, onClose, room, currentUser, existingBookings, onConfirmBooking, initialDate, initialStartHour
@@ -137,9 +137,13 @@ export const BookingModal = ({
         try {
             const res = await fetch(`${API_BASE_URL}/RoomBookings`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
                 body: JSON.stringify(payload),
             });
+
 
             if (res.ok) {
                 const data = await res.json();
