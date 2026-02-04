@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import './UserProfile.css';
 
 // --- Cấu hình API URL ---
 const API_BASE_URL = "https://localhost:7140/api/client";
+
+// --- Helper: Format ngày tháng (VN) ---
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN'); // VD: 25/10/2023
+  } catch {
+    return dateString;
+  }
+};
 
 // --- Icon SVG ---
 const Icons = {
@@ -16,13 +27,12 @@ const Icons = {
   Report: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
   Save: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Lock: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>,
-  // --- MỚI: Thêm icon View (Chi tiết) và Card (Thanh toán) ---
   Eye: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Card: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
 };
 
 const UserProfile = ({ userId }) => {
-  const navigate = useNavigate(); // 2. Hook chuyển hướng trang
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,12 +44,29 @@ const UserProfile = ({ userId }) => {
     confirmPassword: ''
   });
 
-  // --- 1. Fetch Data ---
+  // --- 1. Fetch Data (CÓ AUTH TOKEN) ---
   useEffect(() => {
+    // Nếu không có userId thì không chạy
     if (!userId) return;
 
-    fetch(`${API_BASE_URL}/Users/${userId}`)
+    // Lấy Token từ LocalStorage với key "authToken"
+    const token = localStorage.getItem("authToken");
+
+    // Nếu không có token -> đá về trang login ngay
+    if (!token) {
+        navigate('/login');
+        return;
+    }
+
+    fetch(`${API_BASE_URL}/Users/${userId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Gửi kèm Token
+        }
+    })
       .then(response => {
+        if (response.status === 401) throw new Error('Hết phiên đăng nhập. Vui lòng đăng nhập lại.');
         if (!response.ok) throw new Error('Không thể tải dữ liệu người dùng.');
         return response.json();
       })
@@ -51,22 +78,32 @@ const UserProfile = ({ userId }) => {
         console.error("Lỗi:", err);
         setError(err.message);
         setLoading(false);
+        // Nếu lỗi 401 Unauthorized -> Đá về Login
+        if (err.message.includes("Hết phiên") || err.message.includes("401")) {
+            navigate('/login');
+        }
       });
-  }, [userId]);
+  }, [userId, navigate]);
 
-  // --- 2. Xử lý Update Info ---
+  // --- 2. Xử lý Update Info (CÓ AUTH TOKEN) ---
   const handleSave = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("authToken"); // Lấy token
+
     const updateData = {
       fullName: user.fullName,
       email: user.email,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
+      userId: user.userId
     };
 
     try {
       const response = await fetch(`${API_BASE_URL}/Users/${user.userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Gửi kèm Token
+        },
         body: JSON.stringify(updateData)
       });
 
@@ -81,7 +118,7 @@ const UserProfile = ({ userId }) => {
     }
   };
 
-  // --- 3. Xử lý Đổi mật khẩu ---
+  // --- 3. Xử lý Đổi mật khẩu (CÓ AUTH TOKEN) ---
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -101,9 +138,14 @@ const UserProfile = ({ userId }) => {
     };
 
     try {
+      const token = localStorage.getItem("authToken"); // Lấy token
+      
       const response = await fetch(`${API_BASE_URL}/Users/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Gửi kèm Token
+        },
         body: JSON.stringify(payload)
       });
 
@@ -119,14 +161,12 @@ const UserProfile = ({ userId }) => {
     }
   };
 
-  // --- 4. NAVIGATION HANDLERS (LOGIC MỚI) ---
+  // --- 4. NAVIGATION HANDLERS ---
   const handlePayment = (invoiceId) => {
-    // Chuyển hướng sang trang Checkout để thanh toán
     navigate(`/checkout/${invoiceId}`);
   };
 
   const handleViewDetail = (invoiceId) => {
-    // Chuyển hướng sang trang Checkout để xem lại hóa đơn
     navigate(`/checkout/${invoiceId}`);
   };
 
@@ -156,11 +196,12 @@ const UserProfile = ({ userId }) => {
   if (error) return <div className="profile-wrapper"><h3 style={{ color: 'red' }}>Lỗi: {error}</h3></div>;
   if (!user) return null;
 
+  // Tính toán an toàn (dùng dấu ?)
   const totalSpent = user.invoices
-    .filter(i => i.status === 'Paid')
-    .reduce((sum, item) => sum + item.totalAmount, 0);
+    ?.filter(i => i.status === 'Paid')
+    .reduce((sum, item) => sum + item.totalAmount, 0) || 0;
 
-  const pendingInvoices = user.invoices.filter(i => i.status !== 'Paid').length;
+  const pendingInvoices = user.invoices?.filter(i => i.status !== 'Paid').length || 0;
 
   // --- Render Nội dung bên phải ---
   const renderTabContent = () => {
@@ -183,7 +224,7 @@ const UserProfile = ({ userId }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {user.roomBookings.length === 0 ? (
+                  {(!user.roomBookings || user.roomBookings.length === 0) ? (
                     <tr><td colSpan="5" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.roomBookings.map(bk => (
@@ -191,7 +232,7 @@ const UserProfile = ({ userId }) => {
                         <td style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
                           {bk.roomName}
                         </td>
-                        <td>{bk.date}</td>
+                        <td>{formatDate(bk.date)}</td> {/* Dùng hàm format */}
                         <td>{bk.timeRange}</td>
                         <td>{bk.purpose || '-'}</td>
                         <td>{renderStatusBadge(bk.status)}</td>
@@ -225,22 +266,21 @@ const UserProfile = ({ userId }) => {
                     <th>Ngày thanh toán</th>
                     <th>Số tiền</th>
                     <th>Trạng thái</th>
-                    <th style={{ textAlign: 'center' }}>Hành động</th> {/* Cột Mới */}
+                    <th style={{ textAlign: 'center' }}>Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {user.invoices.length === 0 ? (
+                  {(!user.invoices || user.invoices.length === 0) ? (
                     <tr><td colSpan="6" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.invoices.map(inv => (
                       <tr key={inv.invoiceId}>
                         <td>#{inv.invoiceId}</td>
                         <td>BK-{inv.bookingRefId}</td>
-                        <td>{inv.paymentDate || '-'}</td>
+                        <td>{formatDate(inv.paymentDate)}</td> {/* Dùng hàm format */}
                         <td style={{ fontWeight: 'bold' }}>{inv.totalAmount.toLocaleString('vi-VN')} đ</td>
                         <td>{renderStatusBadge(inv.status)}</td>
                         
-                        {/* --- NÚT BẤM ĐIỀU HƯỚNG --- */}
                         <td style={{ textAlign: 'center' }}>
                           {inv.status === 'Paid' ? (
                             <button 
@@ -287,7 +327,7 @@ const UserProfile = ({ userId }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {user.incidentReports.length === 0 ? (
+                  {(!user.incidentReports || user.incidentReports.length === 0) ? (
                     <tr><td colSpan="4" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.incidentReports.map(rp => (
@@ -489,7 +529,7 @@ const UserProfile = ({ userId }) => {
 
           <div className="stats-grid">
             <div className="stat-box">
-              <span className="stat-num">{user.roomBookings.length}</span>
+              <span className="stat-num">{user.roomBookings?.length || 0}</span>
               <span className="stat-label">Lượt đặt</span>
             </div>
             <div className="stat-box">
