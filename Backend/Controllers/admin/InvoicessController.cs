@@ -1,6 +1,7 @@
 ﻿// Backend.Controllers.admin.InvoicessController
 using Backend.DTOs;
 using Backend.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace Backend.Controllers.admin
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class InvoicessController : ControllerBase
     {
         private readonly InvoiceService _invoiceService;

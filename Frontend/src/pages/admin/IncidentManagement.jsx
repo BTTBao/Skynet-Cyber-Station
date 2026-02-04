@@ -10,8 +10,20 @@ export default function IncidentManagement() {
   useEffect(() => { fetchIncidents(); }, []);
 
   const fetchIncidents = async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res = await fetch('https://localhost:7140/api/IncidentReports');
+      const res = await fetch('https://localhost:7140/api/IncidentReports', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Gửi kèm token
+        }
+      });
+
+      // 3. Kiểm tra nếu phản hồi từ server không thành công (401, 403, 500...)
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
       const result = await res.json();
       
       // Map dữ liệu từ API sang format của frontend
@@ -82,24 +94,26 @@ export default function IncidentManagement() {
   };
 
   const handleMarkAsDone = async (incidentId) => {
+    const token = localStorage.getItem('authToken');
     try {
-      // Gọi API để cập nhật trạng thái
       const res = await fetch(`https://localhost:7140/api/IncidentReports/${incidentId}/resolve`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (res.ok) {
-        // Cập nhật state local
         setIncidents(incidents.map(inc => 
           inc.id === incidentId ? { ...inc, status: 'resolved' } : inc
         ));
+      } else {
+        console.error('Lỗi xác thực hoặc server:', res.status);
       }
     } catch (err) {
       console.error('Lỗi cập nhật sự cố:', err);
-      // Fallback: cập nhật local nếu API lỗi
+      // Fallback: chỉ nên dùng khi demo
       setIncidents(incidents.map(inc => 
         inc.id === incidentId ? { ...inc, status: 'resolved' } : inc
       ));
@@ -107,24 +121,26 @@ export default function IncidentManagement() {
   };
 
   const handleMarkAsProcessing = async (incidentId) => {
+    const token = localStorage.getItem('authToken');
     try {
-      // Gọi API để cập nhật trạng thái
       const res = await fetch(`https://localhost:7140/api/IncidentReports/${incidentId}/process`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (res.ok) {
-        // Cập nhật state local
         setIncidents(incidents.map(inc => 
           inc.id === incidentId ? { ...inc, status: 'processing' } : inc
         ));
+      } else {
+        console.error('Lỗi từ server:', res.status);
       }
     } catch (err) {
-      console.error('Lỗi cập nhật sự cố:', err);
-      // Fallback: cập nhật local nếu API lỗi
+      console.error('Lỗi kết nối:', err);
+      // Fallback local
       setIncidents(incidents.map(inc => 
         inc.id === incidentId ? { ...inc, status: 'processing' } : inc
       ));

@@ -77,14 +77,12 @@ namespace Backend.Service
             if (roleId == 0)
                 throw new Exception("Vai trò không hợp lệ");
 
-            // Hash password
-            var passwordHash = HashPassword(createUserDto.Password);
 
             // Tạo user mới
             var user = new User
             {
                 Username = createUserDto.Username,
-                PasswordHash = passwordHash,
+                PasswordHash = createUserDto.Password,
                 FullName = createUserDto.FullName,
                 Email = createUserDto.Email,
                 PhoneNumber = createUserDto.Phone,

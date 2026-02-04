@@ -254,10 +254,16 @@ export default function BookingManagement() {
   // ── API helpers ───────────────────────────────────────────────────
   const fetchBookings = useCallback(async () => {
     setLoading(true);
+    const token = localStorage.getItem('authToken');
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings`);
+      const res = await fetch(`${API_BASE_URL}/bookings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       const result = await res.json();
-      if (result.success) {
+      if (res.ok && result.success) {
         setBookings(result.data);
         setError(null);
       } else {
@@ -271,10 +277,15 @@ export default function BookingManagement() {
   }, []);
 
   const fetchStatistics = useCallback(async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings/statistics`);
+      const res = await fetch(`${API_BASE_URL}/bookings/statistics`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await res.json();
-      if (result.success) setStatistics(result.data);
+      if (res.ok && result.success) setStatistics(result.data);
     } catch {
       console.error('Fetch statistics failed');
     }
@@ -282,10 +293,15 @@ export default function BookingManagement() {
 
   const searchBookings = useCallback(async (term) => {
     setLoading(true);
+    const token = localStorage.getItem('authToken');
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings/search?searchTerm=${encodeURIComponent(term)}`);
+      const res = await fetch(`${API_BASE_URL}/bookings/search?searchTerm=${encodeURIComponent(term)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await res.json();
-      if (result.success) {
+      if (res.ok && result.success) {
         setBookings(result.data);
         setError(null);
       }
@@ -321,11 +337,17 @@ export default function BookingManagement() {
   // ── actions ───────────────────────────────────────────────────────
   // Duyệt
   const approve = async (id) => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/approve`, { method: 'PATCH' });
+      const res = await fetch(`${API_BASE_URL}/bookings/${id}/approve`, { 
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await res.json();
 
-      if (result.success) {
+      if (res.ok && result.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved', rejectedReason: '' } : b));
         setConfirmItem(null);
         if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status: 'approved', rejectedReason: '' }));
@@ -346,15 +368,20 @@ export default function BookingManagement() {
       ? (rejNote.trim() || 'Lý do khác')
       : rejReason + (rejNote.trim() ? ` — ${rejNote.trim()}` : '');
 
+    const token = localStorage.getItem('authToken');
+
     try {
       const res = await fetch(`${API_BASE_URL}/bookings/${id}/reject`, {
         method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body:    JSON.stringify({ reason })
       });
       const result = await res.json();
 
-      if (result.success) {
+      if (res.ok && result.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'rejected', rejectedReason: reason } : b));
         setRejectItem(null);
         setRejReason(REJECT_REASONS[0]);
@@ -373,15 +400,19 @@ export default function BookingManagement() {
 
   // Đánh dấu dùng phòng
   const markAsUsed = async (id, isUsed) => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/mark-used`, { 
+      const res = await fetch(`${API_BASE_URL}/bookings/${id}/mark-used`, { 
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ isUsed })
       });
       const result = await res.json();
 
-      if (result.success) {
+      if (res.ok && result.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, isUsed } : b));
         if (viewItem?.id === id) setViewItem(prev => ({ ...prev, isUsed }));
         setSuccess('Cập nhật trạng thái sử dụng phòng thành công!');
@@ -398,6 +429,7 @@ export default function BookingManagement() {
   const createInvoice = async (booking) => {
     const hours = calculateHours(booking.timeIn, booking.timeOut);
     const totalAmount = booking.price * hours;
+    const token = localStorage.getItem('authToken');
 
     const payload = {
       bookingID: booking.id,
@@ -410,13 +442,15 @@ export default function BookingManagement() {
     try {
       const res = await fetch(`${API_BASE_URL}/Invoicess`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
       });
       const result = await res.json();
 
-      if (result.success) {
-        // Cập nhật isBillCreated = true
+      if (res.ok && result.success) {
         setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, isBillCreated: true } : b));
         if (viewItem?.id === booking.id) setViewItem(prev => ({ ...prev, isBillCreated: true }));
         

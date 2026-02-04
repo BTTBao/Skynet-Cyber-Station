@@ -15,8 +15,20 @@ export default function InvoiceManagement() {
   useEffect(() => { fetchInvoices(); }, []);
 
   const fetchInvoices = async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res = await fetch('https://localhost:7140/api/Invoicess',{method: 'GET'});
+      const res = await fetch('https://localhost:7140/api/Invoicess', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) console.error("Token hết hạn hoặc không hợp lệ");
+        if (res.status === 403) console.error("Bạn không có quyền truy cập hóa đơn");
+        throw new Error(`Lỗi server: ${res.status}`);
+      }
       const result = await res.json();
       setInvoices(result.data || []);
     } catch (err) { 
@@ -40,11 +52,11 @@ export default function InvoiceManagement() {
     if (!invoiceToConfirm) return;
 
     setIsConfirming(true);
-
+    const token = localStorage.getItem('authToken');
     try {
       const res = await fetch(`https://localhost:7140/api/Invoicess/${invoiceToConfirm.invoiceID}/confirm-payment`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json','Authorization': `Bearer ${token}` }
       });
       console.log(invoiceToConfirm.invoiceID);
 

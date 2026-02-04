@@ -9,7 +9,9 @@ import {
   Layers,
   CheckCircle2,
   AlertCircle,
-  XCircle
+  XCircle,
+  Lock,    // <--- Thêm icon Lock
+  Unlock   // <--- Thêm icon Unlock
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -20,6 +22,10 @@ export default function RoomManagement() {
   const [selectedFloor, setSelectedFloor] = useState(0);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  
+  // URL API gốc
+  const API_BASE = "https://localhost:7140/api";
+
   const [formData, setFormData] = useState({ 
     roomTypeID: '', 
     roomCode: '', 
@@ -33,26 +39,53 @@ export default function RoomManagement() {
 
   // Fetch room types từ API
   const fetchRoomTypes = async () => {
+    const token = localStorage.getItem('authToken'); 
     try {
-      const res = await axios.get("https://localhost:7140/api/rt");
+      const res = await axios.get(`${API_BASE}/rt`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setRoomTypes(res.data);
-      // Set default room type nếu có
       if (res.data.length > 0) {
         setFormData(prev => ({ ...prev, roomTypeID: res.data[0].roomTypeID }));
       }
     } catch (error) {
-      console.error(error);
-      alert("Lỗi khi tải danh sách loại phòng!");
+      console.error("Lỗi chi tiết:", error);
+      if (error.response && error.response.status === 401) {
+        alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
+      } else {
+        alert("Lỗi khi tải danh sách loại phòng!");
+      }
     }
   };
 
   const fetchRooms = async () => {
+    const token = localStorage.getItem('authToken'); 
+
     try {
-      const res = await axios.get("https://localhost:7140/api/rooms");
+      const res = await axios.get(`${API_BASE}/rooms`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       setRooms(res.data);
     } catch (error) {
-      console.error(error);
-      alert("Lỗi khi tải danh sách phòng!");
+      console.error("Lỗi fetchRooms:", error);
+
+      // 3. Kiểm tra các lỗi bảo mật phổ biến
+      if (error.response) {
+        if (error.response.status === 401) {
+          alert("Phiên đăng nhập hết hạn hoặc authToken không hợp lệ!");
+        } else if (error.response.status === 403) {
+          alert("Bạn không có quyền Admin để xem danh sách này!");
+        } else {
+          alert("Lỗi server khi tải danh sách phòng!");
+        }
+      } else {
+        alert("Không thể kết nối đến server!");
+      }
     }
   };
 
@@ -75,7 +108,7 @@ export default function RoomManagement() {
     const { name, value } = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: (name === 'totalComputers' || name === 'floor' || name === 'roomTypeID') 
+      [name]: (name === 'capacity' || name === 'floor' || name === 'roomTypeID') 
         ? Number(value) 
         : value 
     }));
@@ -85,7 +118,7 @@ export default function RoomManagement() {
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://localhost:7140/api/rooms', formData);
+      const res = await axios.post(`${API_BASE}/rooms`, formData);
       setRooms([...rooms, res.data]);
       setFormData({ 
         roomTypeID: roomTypes.length > 0 ? roomTypes[0].roomTypeID : '', 
@@ -96,22 +129,79 @@ export default function RoomManagement() {
         description: '' 
       });
       setShowCreateForm(false);
+      alert("Tạo phòng thành công!");
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || 'Tạo phòng thất bại!');
     }
   };
 
-  // Fetch chi tiết phòng khi click
+  // Fetch chi tiết phòng khi click View
   const handleViewRoom = async (room) => {
+    const token = localStorage.getItem('authToken'); 
+
     try {
-      const res = await axios.get(`https://localhost:7140/api/rooms/${room.roomID}`);
+      const res = await axios.get(`${API_BASE}/rooms/${room.roomID}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       setSelectedRoom(res.data);
     } catch (error) {
-      console.error(error);
-      alert('Lỗi khi tải chi tiết phòng!');
+      console.error("Lỗi fetch chi tiết phòng:", error);
+      
+      // 3. Thông báo lỗi thông minh hơn
+      if (error.response && error.response.status === 401) {
+        alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!');
+      } else {
+        alert('Lỗi khi tải chi tiết phòng!');
+      }
     }
   };
+
+  // --- LOGIC MỚI: XỬ LÝ KHÓA / MỞ KHÓA PHÒNG ---
+  const handleToggleStatus = async (room) => {
+    const isCurrentlyActive = room.status === 'Active';
+    const newStatus = isCurrentlyActive ? 'Inactive' : 'Active';
+
+    const confirmMsg = isCurrentlyActive
+        ? `⚠️ CẢNH BÁO: Bạn muốn KHÓA phòng "${room.roomName}"?\nHệ thống sẽ kiểm tra xem có ai đặt phòng này trong tương lai không.`
+        : `Bạn muốn KÍCH HOẠT lại phòng "${room.roomName}"?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    const token = localStorage.getItem('authToken');
+
+    try {
+        const payload = { ...room, status: newStatus };
+        
+        await axios.put(`${API_BASE}/rooms/${room.roomID}`, payload, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        setRooms(prevRooms => prevRooms.map(r => 
+            r.roomID === room.roomID ? { ...r, status: newStatus } : r
+        ));
+
+        alert(isCurrentlyActive ? "Đã khóa phòng thành công!" : "Đã kích hoạt phòng!");
+
+    } catch (error) {
+        console.error("Lỗi cập nhật trạng thái:", error);
+
+        if (error.response && error.response.status === 400) {
+            const serverMessage = error.response.data.message || "Dữ liệu không hợp lệ.";
+            alert(`❌ KHÔNG THỂ KHÓA PHÒNG!\n\nLý do: ${serverMessage}`);
+        } else if (error.response && error.response.status === 401) {
+            alert("Phiên đăng nhập hết hạn!");
+        } else {
+            alert("Đã xảy ra lỗi hệ thống khi cập nhật trạng thái.");
+        }
+    }
+  };
+  // ----------------------------------------------
 
   if (selectedRoom) {
     return <RoomDetail 
@@ -172,10 +262,19 @@ export default function RoomManagement() {
         .rm-state-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 600; }
         .rm-state-active { background: #ecfdf5; color: #059669; }
         .rm-state-maint { background: #fffbeb; color: #d97706; }
+        .rm-state-inactive { background: #fef2f2; color: #ef4444; } /* Thêm class cho trạng thái inactive */
         .rm-empty { padding: 60px 20px; text-align: center; color: #94a3b8; }
         .rm-empty svg { margin-bottom: 12px; opacity: 0.5; }
-        .rm-view-btn { background: none; border: none; padding: 6px 10px; cursor: pointer; color: #6366f1; transition: 0.2s; border-radius: 6px; }
-        .rm-view-btn:hover { background: #f5f3ff; }
+        /* Action Buttons */
+        .rm-actions-cell { display: flex; gap: 6px; }
+        .rm-action-btn { background: none; border: none; padding: 6px 10px; cursor: pointer; transition: 0.2s; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .rm-action-btn.view { color: #6366f1; }
+        .rm-action-btn.view:hover { background: #eef2ff; }
+        .rm-action-btn.lock { color: #f59e0b; } /* Màu cam cho khóa */
+        .rm-action-btn.lock:hover { background: #fffbeb; }
+        .rm-action-btn.unlock { color: #10b981; } /* Màu xanh cho mở khóa */
+        .rm-action-btn.unlock:hover { background: #ecfdf5; }
+
         /* Modal */
         .rm-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); animation: rmFadeIn 0.2s; }
         @keyframes rmFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -282,9 +381,30 @@ export default function RoomManagement() {
                     <span className="rm-status-chip"><span className="dot dot-amber"></span> {room.maintenanceComputers}</span>
                   </td>
                   <td>
-                    {room.status === 'Active' ? <span className="rm-state-badge rm-state-active">Hoạt động</span> : <span className="rm-state-badge rm-state-maint">Bảo dưỡng</span>}
+                    {room.status === 'Active' 
+                        ? <span className="rm-state-badge rm-state-active">Hoạt động</span> 
+                        : (room.status === 'Inactive' 
+                            ? <span className="rm-state-badge rm-state-inactive">Đã khóa</span> 
+                            : <span className="rm-state-badge rm-state-maint">Bảo dưỡng</span>)
+                    }
                   </td>
-                  <td><button className="rm-view-btn" onClick={() => handleViewRoom(room)}><Eye size={16} /></button></td>
+                  <td>
+                    <div className="rm-actions-cell">
+                        {/* Nút Xem chi tiết */}
+                        <button className="rm-action-btn view" title="Xem chi tiết" onClick={() => handleViewRoom(room)}>
+                            <Eye size={18} />
+                        </button>
+                        
+                        {/* Nút Khóa / Mở khóa */}
+                        <button 
+                            className={`rm-action-btn ${room.status === 'Active' ? 'lock' : 'unlock'}`}
+                            title={room.status === 'Active' ? 'Khóa phòng' : 'Mở khóa phòng'}
+                            onClick={() => handleToggleStatus(room)}
+                        >
+                            {room.status === 'Active' ? <Lock size={18} /> : <Unlock size={18} />}
+                        </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -322,7 +442,7 @@ export default function RoomManagement() {
                   </div>
                   <div className="rm-form-group">
                     <label className="rm-form-label">Số máy</label>
-                    <input type="number" className="rm-form-input" name="totalComputers" value={formData.totalComputers} onChange={handleInputChange} min={1} />
+                    <input type="number" className="rm-form-input" name="capacity" value={formData.capacity} onChange={handleInputChange} min={1} />
                   </div>
                   <div className="rm-form-group">
                     <label className="rm-form-label">Tầng</label>
