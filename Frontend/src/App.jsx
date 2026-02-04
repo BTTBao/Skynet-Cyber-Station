@@ -2,7 +2,7 @@ import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import Home from './pages/client/Home'
 import UserProfile from './pages/client/UserProfile'
-import Login from './pages/client/Login'
+import AuthPage from './pages/client/AuthPage'
 import Checkout from './pages/client/Checkout'
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
@@ -20,7 +20,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/checkout/:invoiceId" element={<Checkout />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<AuthPage />} />
       </Routes>
 
       <Routes>

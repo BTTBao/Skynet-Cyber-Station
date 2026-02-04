@@ -20,7 +20,30 @@ export const BookingSummary = ({
                 {startHour && (
                     <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between items-center">
                         <span className="font-semibold text-gray-700">
-                            {startHour}:00 - {startHour + duration}:00 ({duration}h)
+                            {(() => {
+                                // Format giờ bắt đầu
+                                const startTimeStr = `${startHour.toString().padStart(2, '0')}:00`;
+
+                                // Tính giờ kết thúc
+                                const endTimeDecimal = startHour + duration;
+                                const endHour = Math.floor(endTimeDecimal);
+                                const endMinute = Math.round((endTimeDecimal - endHour) * 60);
+                                const endTimeStr = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
+                                // Format duration
+                                const durationHours = Math.floor(duration);
+                                const durationMinutes = Math.round((duration - durationHours) * 60);
+                                let durationStr = '';
+                                if (durationHours > 0 && durationMinutes > 0) {
+                                    durationStr = `${durationHours}h ${durationMinutes}p`;
+                                } else if (durationHours > 0) {
+                                    durationStr = `${durationHours}h`;
+                                } else {
+                                    durationStr = `${durationMinutes}p`;
+                                }
+
+                                return `${startTimeStr} - ${endTimeStr} (${durationStr})`;
+                            })()}
                         </span>
                         <div className="flex items-center text-lg font-bold text-[#271756]">
                             <CreditCard size={20} className="mr-2" />

@@ -110,7 +110,7 @@ export const Sidebar = ({
                             </p>
                             <div className="flex items-center space-x-3 mb-3">
                                 <img
-                                    src={currentUser.avatar || "https://via.placeholder.com/40"}
+                                    src={currentUser.avatar || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
                                     alt=""
                                     className="w-8 h-8 rounded-full"
                                 />
