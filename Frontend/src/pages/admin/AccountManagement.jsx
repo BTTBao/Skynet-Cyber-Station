@@ -30,18 +30,25 @@ export default function AccountManagement() {
   }, []);
 
   const fetchRoles = async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const response = await fetch(`${API_BASE_URL}/roles`);
+      const response = await fetch(`${API_BASE_URL}/roles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         setRoles(result.data);
         if (result.data.length > 0) {
           setFormData(prev => ({ ...prev, roleId: result.data[0].roleId }));
         }
+      } else {
+        throw new Error(result.message || 'Lỗi server');
       }
     } catch (err) {
-      console.error('Error fetching roles:', err);
+      console.error('Error fetching roles, using fallback:', err);
       const fallbackRoles = [
         { roleId: 1, roleName: 'Admin', roleCode: 'admin' },
         { roleId: 2, roleName: 'Quản lý', roleCode: 'manager' },
@@ -54,10 +61,21 @@ export default function AccountManagement() {
   };
 
   const fetchAccounts = async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res = await fetch(`${API_BASE_URL}/users`, { method: 'GET' });
+      const res = await fetch(`${API_BASE_URL}/users`, { 
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await res.json();
-      setAccounts(result.data || []);
+      
+      if (res.ok) {
+        setAccounts(result.data || result || []);
+      } else {
+        console.error('Lỗi server:', result.message);
+      }
     } catch (err) {
       console.error('Lỗi fetch tài khoản:', err);
     } finally {
@@ -137,11 +155,11 @@ export default function AccountManagement() {
       phone: formData.phone,
       department: formData.department || ''
     };
-
+    const token = localStorage.getItem('authToken');
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json','Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
 
@@ -172,15 +190,22 @@ export default function AccountManagement() {
   };
 
   const toggleAccountStatus = async (id) => {
+    const token = localStorage.getItem('authToken');
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}/toggle-status`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       const result = await response.json();
-      if (result.success) {
+      
+      if (response.ok && result.success) {
         setAccounts(accounts.map(acc =>
           acc.id === id ? { ...acc, status: acc.status === 'active' ? 'locked' : 'active' } : acc
         ));
+      } else {
+        alert(result.message || 'Cập nhật trạng thái thất bại');
       }
     } catch (err) {
       alert('Lỗi kết nối đến server');

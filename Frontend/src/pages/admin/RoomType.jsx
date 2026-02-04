@@ -16,13 +16,22 @@ export default function RoomTypeManagement() {
   const [formData, setFormData] = useState({ roomTypeId: 0, typeName: '', basePrice: 0 });
 
   // 1. Load Data
-  const fetchTypes = async () => {
+const fetchTypes = async () => {
+    const token = localStorage.getItem('authToken');
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get(API_URL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setTypes(res.data);
     } catch (error) {
       console.error(error);
-      alert("Lỗi tải dữ liệu!");
+      if (error.response?.status === 401) {
+        alert("Phiên đăng nhập hết hạn!");
+      } else {
+        alert("Lỗi tải dữ liệu!");
+      }
     }
   };
 
@@ -31,13 +40,18 @@ export default function RoomTypeManagement() {
   // 2. Handle Save (Create / Update)
   const handleSave = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('authToken');
+    const config = {
+      headers: { 'Authorization': `Bearer ${token}` }
+    };
+
     try {
       if (isEditing) {
-        await axios.put(`${API_URL}/${formData.roomTypeId}`, formData);
+        await axios.put(`${API_URL}/${formData.roomTypeId}`, formData, config);
         alert("Cập nhật thành công!");
       } else {
-        const { roomTypeId, ...newData } = formData; // Bỏ ID khi tạo mới
-        await axios.post(API_URL, newData);
+        const { roomTypeId, ...newData } = formData;
+        await axios.post(API_URL, newData, config);
         alert("Thêm mới thành công!");
       }
       setShowModal(false);
@@ -49,15 +63,17 @@ export default function RoomTypeManagement() {
 
   // 3. Handle Delete (Logic chặn xóa tại Frontend)
   const handleDelete = async (id, name, usedCount) => {
-    // Cảnh báo ngay tại client để đỡ phải gọi API nếu biết chắc sẽ lỗi
     if (usedCount > 0) {
       alert(`KHÔNG THỂ XÓA!\n\nLoại phòng "${name}" đang được sử dụng bởi ${usedCount} phòng.\nBạn cần vào 'Quản lý phòng' để đổi loại phòng cho các phòng đó trước.`);
       return;
     }
 
     if (window.confirm(`Bạn chắc chắn muốn xóa loại phòng "${name}"?`)) {
+      const token = localStorage.getItem('authToken');
       try {
-        await axios.delete(`${API_URL}/${id}`);
+        await axios.delete(`${API_URL}/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         fetchTypes();
       } catch (error) {
         alert(error.response?.data?.message || "Xóa thất bại!");

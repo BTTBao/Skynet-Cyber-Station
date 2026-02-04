@@ -184,7 +184,7 @@ const UserProfile = ({ userId }) => {
     let className = 'badge ';
     const s = status?.toLowerCase() || '';
 
-    if (['approved', 'paid', 'resolved', 'active'].includes(s)) className += 'status-success';
+    if (['approved', 'paid', 'Approved', 'active'].includes(s)) className += 'status-success';
     else if (['pending', 'unpaid', 'not yet paid'].includes(s)) className += 'status-pending';
     else if (['rejected', 'cancelled'].includes(s)) className += 'status-rejected';
     else className += 'status-processing';

@@ -1,5 +1,6 @@
 ﻿using Backend.DTOs;
 using Backend.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -7,6 +8,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class IncidentReportsController : ControllerBase
     {
         private readonly IIncidentReportService _incidentReportService;

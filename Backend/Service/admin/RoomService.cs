@@ -118,8 +118,8 @@ namespace Backend.Service
                 throw new ArgumentException("Số tầng phải từ 1 đến 10");
 
             if (!string.IsNullOrEmpty(dto.Status) &&
-                dto.Status != "Active" && dto.Status != "Maintenance")
-                throw new ArgumentException("Trạng thái chỉ có thể là 'Active' hoặc 'Maintenance'");
+                dto.Status != "Active" && dto.Status != "Inactive")
+                throw new ArgumentException("Trạng thái chỉ có thể là 'Active' hoặc 'Inactive'");
 
             room.RoomTypeId = dto.RoomTypeID;
             room.RoomName = dto.RoomName;

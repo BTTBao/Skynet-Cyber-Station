@@ -25,11 +25,25 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     setError(null);
+    const authToken = localStorage.getItem('authToken'); 
+
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard`);
+      const response = await fetch(`${API_BASE_URL}/dashboard`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}` 
+        }
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        setError('Bạn không có quyền truy cập hoặc phiên đăng nhập hết hạn');
+        return;
+      }
+
       const result = await response.json();
       
-      if (result) {
+      if (response.ok) { // Dùng response.ok sẽ chuẩn hơn check result
         setDashboardData(result);
       } else {
         setError(result.message || 'Không thể tải dữ liệu dashboard');
