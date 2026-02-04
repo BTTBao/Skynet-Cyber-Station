@@ -27,7 +27,7 @@ namespace Backend.Controllers.Client
                 var bookings = await _context.RoomBookings
                     .Include(b => b.User)  // Join bảng User để lấy tên
                     .Include(b => b.Room)  // Join bảng Room để lấy tên phòng
-                    .Where(b => b.Status == "Booked" || b.Status == "InUse")
+                    .Where(b => b.Status == "Approved" || b.IsUsed == true)
                     .Select(b => new
                     {
                         id = b.BookingId,
@@ -65,6 +65,8 @@ namespace Backend.Controllers.Client
             {
                 var history = await _context.RoomBookings
                     .Include(b => b.Room)
+                        .ThenInclude(r => r.RoomType)
+                    .Include(b => b.User)
                     .Where(b => b.UserId == userId)
                     .OrderByDescending(b => b.BookingDate) // Sắp xếp mới nhất lên đầu
                     .ThenByDescending(b => b.StartTime)
@@ -73,7 +75,9 @@ namespace Backend.Controllers.Client
                         id = b.BookingId,
                         roomId = b.RoomId,
                         roomName = b.Room.RoomName,
+                        basePrice = (b.User.Role.RoleName == "Giảng viên") ? 0 : b.Room.RoomType.BasePrice,
                         userId = b.UserId,
+                        isUsed = b.IsUsed,
 
                         // Format ngày hiển thị
                         date = b.BookingDate.ToString("yyyy-MM-dd"),
