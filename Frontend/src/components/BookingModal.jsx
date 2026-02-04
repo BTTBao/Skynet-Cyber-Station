@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"; // Import navigate
 import { UserRole } from "../data/type"
-import { X, Loader2 } from "lucide-react"
+import { X, Loader2, AlertCircle } from "lucide-react"
 import { DateTimeSelector } from "./booking/DateTimeSelector"
 import { BookingSummary } from "./booking/BookingSummary"
+import { BookingService } from "../services/BookingService"
+import { BookingConfig, BookingHelpers } from "../data/bookingConfig"
 
 const API_BASE_URL = "https://localhost:7140/api";
 
@@ -16,6 +18,8 @@ export const BookingModal = ({
     const [duration, setDuration] = useState(1)
     const [purpose, setPurpose] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [validationErrors, setValidationErrors] = useState([])
+    const [isValidating, setIsValidating] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
@@ -24,19 +28,62 @@ export const BookingModal = ({
             setDuration(1)
             setPurpose("")
             setIsSubmitting(false)
+            setValidationErrors([])
+            setIsValidating(false)
         }
     }, [isOpen, initialDate, initialStartHour])
 
+    // Auto-validate khi user thay đổi date/time
+    useEffect(() => {
+        if (isOpen && startHour !== null && selectedDate) {
+            validateSelection()
+        }
+    }, [selectedDate, startHour, duration])
+
     if (!isOpen) return null
 
-    // Logic tính toán slots (giữ nguyên của bạn)
+    // --- VALIDATION FUNCTIONS ---
+    const validateSelection = async () => {
+        if (!startHour || !selectedDate) return
+
+        setIsValidating(true)
+        setValidationErrors([])
+
+        const endHour = startHour + duration
+        const userId = parseInt(currentUser.id || currentUser.userId)
+        const roomId = parseInt(room.roomId || room.RoomId || room.id)
+
+        try {
+            const validation = await BookingService.validateBookingRequest(
+                userId, roomId, selectedDate, startHour, endHour, duration
+            )
+
+            if (!validation.isValid) {
+                setValidationErrors(validation.errors)
+            }
+        } catch (error) {
+            console.error('Lỗi validation:', error)
+            setValidationErrors(['Không thể kiểm tra tính hợp lệ. Vui lòng thử lại.'])
+        } finally {
+            setIsValidating(false)
+        }
+    }
+
+    // Legacy: Giữ lại cho DateTimeSelector (sẽ cập nhật sau)
     const getBookedSlots = date => {
         return existingBookings
-            .filter(b => b.roomId === room.id && b.date === date && b.status !== "REJECTED" && b.status !== "Cancelled")
+            .filter(b => {
+                const bookingDate = b.date || b.bookingDate
+                const roomMatches = (b.roomId === room.id || b.roomId === room.roomId)
+                const isActive = b.status !== "REJECTED" && b.status !== "Cancelled" && b.status !== "Rejected"
+                return roomMatches && bookingDate === date && isActive
+            })
             .flatMap(b => {
-                const slots = [];
-                for (let i = b.startTime; i < b.endTime; i++) slots.push(i);
-                return slots;
+                const slots = []
+                const start = b.startTime || b.startHour
+                const end = b.endTime || b.endHour
+                for (let i = start; i < end; i++) slots.push(i)
+                return slots
             })
     }
     const bookedSlots = getBookedSlots(selectedDate)
@@ -45,27 +92,38 @@ export const BookingModal = ({
 
     // --- HÀM XỬ LÝ ĐẶT PHÒNG ---
     const handleBook = async () => {
-        if (startHour === null) return
-        for (let i = 0; i < duration; i++) {
-            if (!isSlotAvailable(startHour + i)) {
-                alert("Bị trùng lịch rồi!"); return;
-            }
+        if (startHour === null) {
+            alert("Đề nghị chọn giờ bắt đầu!")
+            return
         }
-        if (!purpose.trim()) { alert("Nhập mục đích đi bạn!"); return; }
+
+        if (!purpose.trim()) {
+            alert("Vui lòng nhập mục đích sử dụng phòng!")
+            return
+        }
+
+        // Kiểm tra validation errors
+        if (validationErrors.length > 0) {
+            alert("Đặt phòng không thành công:\n" + validationErrors.join('\n'))
+            return
+        }
 
         setIsSubmitting(true)
 
-        // Fix giờ Local
-        const formatLocalISO = (dateStr, hour) => {
-            const h = hour.toString().padStart(2, '0');
-            return `${dateStr}T${h}:00:00`;
+        // Format giờ Local với xử lý cả phút
+        const formatLocalISO = (dateStr, decimalHour) => {
+            const hours = Math.floor(decimalHour);
+            const minutes = Math.round((decimalHour - hours) * 60);
+            const h = hours.toString().padStart(2, '0');
+            const m = minutes.toString().padStart(2, '0');
+            return `${dateStr}T${h}:${m}:00`;
         }
 
         const payload = {
             userId: parseInt(currentUser.id || currentUser.userId),
             roomId: parseInt(room.roomId || room.RoomId || room.id),
             bookingDate: selectedDate,
-            purpose: purpose,
+            purpose: purpose.trim(),
             startTime: formatLocalISO(selectedDate, startHour),
             endTime: formatLocalISO(selectedDate, startHour + duration)
         };
@@ -80,20 +138,21 @@ export const BookingModal = ({
             if (res.ok) {
                 const data = await res.json();
                 onClose(); // Đóng modal
-                
+
                 // NẾU CÓ INVOICE ID -> CHUYỂN SANG TRANG CHECKOUT
                 if (data.invoiceId) {
                     navigate(`/checkout/${data.invoiceId}`);
                 } else {
-                    alert("Đặt phòng thành công!");
+                    alert("Đặt phòng thành công! Chờ quản trị viên duyệt.");
                     if (onConfirmBooking) onConfirmBooking(data);
                 }
             } else {
                 const err = await res.json();
-                alert(`Lỗi: ${err.message}`);
+                alert(`Lỗi: ${err.message || 'Không thể đặt phòng'}`);
             }
         } catch (error) {
-            alert("Lỗi kết nối server.");
+            console.error('Lỗi đặt phòng:', error)
+            alert("Lỗi kết nối server. Vui lòng thử lại.");
         } finally {
             setIsSubmitting(false)
         }
@@ -110,6 +169,28 @@ export const BookingModal = ({
                     <button onClick={onClose}><X size={24} className="text-gray-500" /></button>
                 </div>
                 <div className="p-6 space-y-6 flex-1">
+                    {/* Hiển thị validation errors */}
+                    {validationErrors.length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-red-800 font-semibold">
+                                <AlertCircle size={18} />
+                                <span>Không thể đặt phòng</span>
+                            </div>
+                            <ul className="list-disc list-inside text-sm text-red-700 space-y-1 ml-2">
+                                {validationErrors.map((error, index) => (
+                                    <li key={index}>{error}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {isValidating && (
+                        <div className="flex items-center justify-center gap-2 text-gray-600 py-2">
+                            <Loader2 className="animate-spin" size={16} />
+                            <span className="text-sm">Kiểm tra tính khả dụng...</span>
+                        </div>
+                    )}
+
                     <DateTimeSelector
                         selectedDate={selectedDate} setSelectedDate={setSelectedDate}
                         startHour={startHour} setStartHour={setStartHour}
@@ -121,9 +202,10 @@ export const BookingModal = ({
                 </div>
                 <div className="p-6 border-t bg-white sticky bottom-0 z-10 flex justify-end gap-3">
                     <button onClick={onClose} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg">Hủy bỏ</button>
-                    <button 
-                        onClick={handleBook} disabled={!startHour || !purpose || isSubmitting}
-                        className="px-5 py-2.5 bg-[#271756] text-white font-medium rounded-lg hover:bg-[#271756]/90 disabled:opacity-50 flex items-center gap-2"
+                    <button
+                        onClick={handleBook}
+                        disabled={!startHour || !purpose || isSubmitting || validationErrors.length > 0 || isValidating}
+                        className="px-5 py-2.5 bg-[#271756] text-white font-medium rounded-lg hover:bg-[#271756]/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {isSubmitting && <Loader2 className="animate-spin w-4 h-4" />}
                         {isSubmitting ? "Đang xử lý..." : "Xác nhận"}

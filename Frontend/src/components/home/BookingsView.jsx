@@ -78,10 +78,14 @@ export const BookingsView = ({
                     switch (status) {
                         case "PENDING":
                             return { bg: "bg-yellow-100", text: "text-yellow-700", label: "Chờ duyệt" }
+                        case "APPROVED":
+                            return {
+                                bg: booking.isUsed ? "bg-green-100" : "bg-blue-100",
+                                text: booking.isUsed ? "text-green-700" : "text-blue-700",
+                                label: booking.isUsed ? "Đang sử dụng" : "Đã đặt"
+                            }
                         case "REJECTED":
                             return { bg: "bg-red-100", text: "text-red-700", label: "Từ chối" }
-                        case "APPROVED": // Backward compatibility
-                            return { bg: "bg-green-100", text: "text-green-700", label: "Đã đặt" }
                         default:
                             return { bg: "bg-gray-100", text: "text-gray-700", label: status }
                     }

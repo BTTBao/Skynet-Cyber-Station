@@ -73,6 +73,7 @@ namespace Backend.Controllers.Client
                     .Select(b => new
                     {
                         id = b.BookingId,
+                        bookingId = b.BookingId, // Thêm để frontend dùng
                         roomId = b.RoomId,
                         roomName = b.Room.RoomName,
                         basePrice = (b.User.Role.RoleName == "Giảng viên") ? 0 : b.Room.RoomType.BasePrice,
@@ -81,6 +82,7 @@ namespace Backend.Controllers.Client
 
                         // Format ngày hiển thị
                         date = b.BookingDate.ToString("yyyy-MM-dd"),
+                        bookingDate = b.BookingDate.ToString("yyyy-MM-dd"), // Thêm để frontend dùng
 
                         // Lấy giờ (số nguyên) để tính toán logic nếu cần
                         startHour = b.StartTime.HasValue ? b.StartTime.Value.Hour : 0,
@@ -101,6 +103,56 @@ namespace Backend.Controllers.Client
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi server khi lấy lịch sử đặt phòng", error = ex.Message });
+            }
+        }
+
+        // GET: api/client/Booking/check-conflicts
+        // Kiểm tra xem user có lịch conflict không (cho frontend validation)
+        [HttpGet("check-conflicts")]
+        public async Task<IActionResult> CheckBookingConflicts(
+            [FromQuery] int userId,
+            [FromQuery] string date,
+            [FromQuery] int startHour,
+            [FromQuery] int endHour)
+        {
+            try
+            {
+                // Lấy tất cả booking của user trong ngày đó
+                var userBookings = await _context.RoomBookings
+                    .Where(b => b.UserId == userId 
+                        && b.BookingDate.ToString("yyyy-MM-dd") == date
+                        && (b.Status == "Pending" || b.Status == "Approved" || b.IsUsed == true))
+                    .Select(b => new
+                    {
+                        startHour = b.StartTime.HasValue ? b.StartTime.Value.Hour : 0,
+                        endHour = b.EndTime.HasValue ? b.EndTime.Value.Hour : 0,
+                        status = b.Status,
+                        isUsed = b.IsUsed
+                    })
+                    .ToListAsync();
+
+                // Kiểm tra conflict
+                bool hasConflict = userBookings.Any(b =>
+                    (startHour >= b.startHour && startHour < b.endHour) ||
+                    (endHour > b.startHour && endHour <= b.endHour) ||
+                    (startHour <= b.startHour && endHour >= b.endHour)
+                );
+
+                // Đếm số lượng booking trong ngày
+                int bookingCount = userBookings.Count;
+
+                return Ok(new
+                {
+                    hasConflict = hasConflict,
+                    bookingCount = bookingCount,
+                    conflictingBookings = hasConflict
+                        ? userBookings.Cast<object>().ToList()
+                        : new List<object>()
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi kiểm tra conflict", error = ex.Message });
             }
         }
     }
