@@ -118,5 +118,30 @@
                 };
             }
         }
- 
+
+    public class RoomDetailDto2
+    {
+        public int RoomID { get; set; }
+        public int RoomTypeID { get; set; }
+        public string RoomCode { get; set; }
+        public string RoomName { get; set; }
+        public int Capacity { get; set; }
+        public int? Floor { get; set; }
+        public string Description { get; set; }
+        public string Status { get; set; }
+
+        // Thông tin từ RoomType
+        public string TypeName { get; set; }
+        public decimal BasePrice { get; set; }
+
+        // Thống kê máy tính
+        public int TotalComputers { get; set; }
+        public int ActiveComputers { get; set; }
+        public int BrokenComputers { get; set; }
+        public int MaintenanceComputers { get; set; }
+
+        // Danh sách máy tính chi tiết
+        public List<ComputerDto2> Computers { get; set; } = new List<ComputerDto2>();
+    }
+
 }

@@ -44,8 +44,8 @@ export default function InvoiceDetail({ invoice, onBack, onUpdate }) {
 
             <div className="mb-3">
               <strong>Trạng thái:</strong> 
-              <span className={`badge ms-2 ${invoice.status === 'Đã thanh toán' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'} p-2 px-3`}>
-                {invoice.status}
+              <span className={`badge ms-2 ${invoice.status === 'paid' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'} p-2 px-3`}>
+                {invoice.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
               </span>
             </div>
           </div>

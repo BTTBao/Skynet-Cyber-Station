@@ -7,15 +7,16 @@ namespace Backend.Service
     public interface IRoomService
     {
         Task<IEnumerable<RoomDto>> GetAllRoomsAsync();
-        Task<RoomDetailDto> GetRoomByIdAsync(int roomId);
+        Task<RoomDetailDto2> GetRoomByIdAsync(int roomId);
         Task<IEnumerable<RoomDto>> GetRoomsByFloorAsync(int floor);
         Task<IEnumerable<RoomDto>> GetRoomsByTypeAsync(int roomTypeId);
         Task<IEnumerable<RoomDto>> SearchRoomsAsync(string searchTerm);
         Task<IEnumerable<RoomDto>> GetAvailableRoomsAsync(DateTime startTime, DateTime endTime);
-        Task<RoomDto> CreateRoomAsync(CreateRoomDto dto);
-        Task<RoomDto> UpdateRoomAsync(int roomId, UpdateRoomDto dto);
+        Task<RoomDetailDto2> CreateRoomAsync(CreateRoomDto dto);
+        Task<RoomDetailDto2> UpdateRoomAsync(int roomId, UpdateRoomDto dto);
         Task<bool> DeleteRoomAsync(int roomId);
     }
+
     public class RoomService : IRoomService
     {
         private readonly IRoomRepository _roomRepository;
@@ -30,7 +31,7 @@ namespace Backend.Service
             return await _roomRepository.GetAllRoomsWithDetailsAsync();
         }
 
-        public async Task<RoomDetailDto> GetRoomByIdAsync(int roomId)
+        public async Task<RoomDetailDto2> GetRoomByIdAsync(int roomId)
         {
             var room = await _roomRepository.GetRoomDetailAsync(roomId);
             if (room == null)
@@ -68,7 +69,7 @@ namespace Backend.Service
             return await _roomRepository.GetAvailableRoomsAsync(startTime, endTime);
         }
 
-        public async Task<RoomDto> CreateRoomAsync(CreateRoomDto dto)
+        public async Task<RoomDetailDto2> CreateRoomAsync(CreateRoomDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.RoomCode))
                 throw new ArgumentException("Mã phòng không được để trống");
@@ -101,7 +102,7 @@ namespace Backend.Service
             return await _roomRepository.GetRoomDetailAsync(createdRoom.RoomId);
         }
 
-        public async Task<RoomDto> UpdateRoomAsync(int roomId, UpdateRoomDto dto)
+        public async Task<RoomDetailDto2> UpdateRoomAsync(int roomId, UpdateRoomDto dto)
         {
             var room = await _roomRepository.GetByIdAsync(roomId);
             if (room == null)

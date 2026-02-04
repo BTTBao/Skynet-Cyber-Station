@@ -15,14 +15,36 @@ import axios from 'axios';
 
 export default function RoomManagement() {
   const [rooms, setRooms] = useState([]);
+  const [roomTypes, setRoomTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFloor, setSelectedFloor] = useState(0);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [formData, setFormData] = useState({ typeName: 'Phòng Cơ bản', roomCode: '', roomName: '', totalComputers: 8, floor: 1, description: '' });
+  const [formData, setFormData] = useState({ 
+    roomTypeID: '', 
+    roomCode: '', 
+    roomName: '', 
+    capacity: 8, 
+    floor: 1, 
+    description: '' 
+  });
 
   const floors = [0, 1, 2, 3, 4, 5];
-  const roomTypes = ['Phòng Cơ bản', 'Phòng AI', 'Phòng Đồ họa', 'Phòng Hệ thống', 'Phòng Cloud'];
+
+  // Fetch room types từ API
+  const fetchRoomTypes = async () => {
+    try {
+      const res = await axios.get("https://localhost:7140/api/rt");
+      setRoomTypes(res.data);
+      // Set default room type nếu có
+      if (res.data.length > 0) {
+        setFormData(prev => ({ ...prev, roomTypeID: res.data[0].roomTypeID }));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi khi tải danh sách loại phòng!");
+    }
+  };
 
   const fetchRooms = async () => {
     try {
@@ -35,6 +57,7 @@ export default function RoomManagement() {
   };
 
   useEffect(() => {
+    fetchRoomTypes();
     fetchRooms();
   }, []);
 
@@ -50,7 +73,12 @@ export default function RoomManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'totalComputers' || name === 'floor' ? Number(value) : value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: (name === 'totalComputers' || name === 'floor' || name === 'roomTypeID') 
+        ? Number(value) 
+        : value 
+    }));
   };
 
   // Tạo phòng mới
@@ -59,7 +87,14 @@ export default function RoomManagement() {
     try {
       const res = await axios.post('https://localhost:7140/api/rooms', formData);
       setRooms([...rooms, res.data]);
-      setFormData({ typeName: 'Phòng Cơ bản', roomCode: '', roomName: '', totalComputers: 8, floor: 1, description: '' });
+      setFormData({ 
+        roomTypeID: roomTypes.length > 0 ? roomTypes[0].roomTypeID : '', 
+        roomCode: '', 
+        roomName: '', 
+        capacity: 8, 
+        floor: 1, 
+        description: '' 
+      });
       setShowCreateForm(false);
     } catch (error) {
       console.error(error);
@@ -67,8 +102,26 @@ export default function RoomManagement() {
     }
   };
 
+  // Fetch chi tiết phòng khi click
+  const handleViewRoom = async (room) => {
+    try {
+      const res = await axios.get(`https://localhost:7140/api/rooms/${room.roomID}`);
+      setSelectedRoom(res.data);
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi tải chi tiết phòng!');
+    }
+  };
+
   if (selectedRoom) {
-    return <RoomDetail room={selectedRoom} onBack={() => setSelectedRoom(null)} onUpdate={(updatedRoom) => { setRooms(rooms.map(r => r.roomID === updatedRoom.roomID ? updatedRoom : r)); setSelectedRoom(updatedRoom); }} />;
+    return <RoomDetail 
+      room={selectedRoom} 
+      onBack={() => setSelectedRoom(null)} 
+      onUpdate={(updatedRoom) => { 
+        setRooms(rooms.map(r => r.roomID === updatedRoom.roomID ? updatedRoom : r)); 
+        setSelectedRoom(updatedRoom); 
+      }} 
+    />;
   }
 
   return (
@@ -76,6 +129,7 @@ export default function RoomManagement() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
         * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+        .bk-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:#6366f1; font-weight:600; background:#eef2ff; padding:3px 8px; border-radius:5px; display:inline-block; }
         .rm-root { min-height: 100vh; background: #f0f4f8; padding: 28px; }
         .rm-header { background: #1e293b; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; position: relative; overflow: hidden; }
         .rm-header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: rgba(99,102,241,0.12); border-radius: 50%; }
@@ -120,6 +174,8 @@ export default function RoomManagement() {
         .rm-state-maint { background: #fffbeb; color: #d97706; }
         .rm-empty { padding: 60px 20px; text-align: center; color: #94a3b8; }
         .rm-empty svg { margin-bottom: 12px; opacity: 0.5; }
+        .rm-view-btn { background: none; border: none; padding: 6px 10px; cursor: pointer; color: #6366f1; transition: 0.2s; border-radius: 6px; }
+        .rm-view-btn:hover { background: #f5f3ff; }
         /* Modal */
         .rm-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); animation: rmFadeIn 0.2s; }
         @keyframes rmFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -127,6 +183,8 @@ export default function RoomManagement() {
         @keyframes rmSlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .rm-modal-head { padding: 22px 24px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; }
         .rm-modal-head h3 { margin: 0; font-size: 17px; color: #1e293b; font-weight: 700; }
+        .rm-close-btn { background: none; border: none; padding: 4px; cursor: pointer; color: #64748b; transition: 0.2s; border-radius: 6px; }
+        .rm-close-btn:hover { background: #f1f5f9; color: #1e293b; }
         .rm-modal-body { padding: 22px 24px 24px; }
         .rm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .rm-form-group { margin-bottom: 16px; }
@@ -201,7 +259,7 @@ export default function RoomManagement() {
                 <th>Số máy</th>
                 <th>Tình trạng máy</th>
                 <th>Trạng thái</th>
-                <th></th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -214,10 +272,10 @@ export default function RoomManagement() {
                 </tr>
               ) : filteredRooms.map(room => (
                 <tr key={room.roomID}>
-                  <td className="rm-code">{room.roomCode}</td>
+                  <td><span className="bk-code">{room.roomCode}</span></td>
                   <td className="rm-name">{room.roomName}</td>
                   <td>{room.typeName}</td>
-                  <td>{room.totalComputers}</td>
+                  <td>{room.capacity}</td>
                   <td className="rm-status-row">
                     <span className="rm-status-chip"><span className="dot dot-green"></span> {room.activeComputers}</span>
                     <span className="rm-status-chip"><span className="dot dot-red"></span> {room.brokenComputers}</span>
@@ -226,7 +284,7 @@ export default function RoomManagement() {
                   <td>
                     {room.status === 'Active' ? <span className="rm-state-badge rm-state-active">Hoạt động</span> : <span className="rm-state-badge rm-state-maint">Bảo dưỡng</span>}
                   </td>
-                  <td><button onClick={() => setSelectedRoom(room)}><Eye size={16} /></button></td>
+                  <td><button className="rm-view-btn" onClick={() => handleViewRoom(room)}><Eye size={16} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -238,7 +296,9 @@ export default function RoomManagement() {
             <form className="rm-modal" onSubmit={handleCreateRoom}>
               <div className="rm-modal-head">
                 <h3>Tạo phòng mới</h3>
-                <button type="button" onClick={() => setShowCreateForm(false)}><X size={20} /></button>
+                <button type="button" className="rm-close-btn" onClick={() => setShowCreateForm(false)}>
+                  <X size={20} />
+                </button>
               </div>
               <div className="rm-modal-body">
                 <div className="rm-form-row">
@@ -252,8 +312,12 @@ export default function RoomManagement() {
                   </div>
                   <div className="rm-form-group">
                     <label className="rm-form-label">Loại phòng</label>
-                    <select className="rm-form-input" name="typeName" value={formData.typeName} onChange={handleInputChange}>
-                      {roomTypes.map(t => <option key={t}>{t}</option>)}
+                    <select className="rm-form-input" name="roomTypeID" value={formData.roomTypeID} onChange={handleInputChange}>
+                      {roomTypes.map(t => (
+                        <option key={t.roomTypeID} value={t.roomTypeID}>
+                          {t.typeName}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="rm-form-group">

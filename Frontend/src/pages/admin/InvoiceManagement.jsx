@@ -46,6 +46,7 @@ export default function InvoiceManagement() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' }
       });
+      console.log(invoiceToConfirm.invoiceID);
 
       const result = await res.json();
 
@@ -66,8 +67,8 @@ export default function InvoiceManagement() {
 
   const statusOptions = [
     { value: 'all', label: 'Tất cả' },
-    { value: 'Đã thanh toán', label: 'Đã thanh toán' },
-    { value: 'Chưa thanh toán', label: 'Chưa thanh toán' }
+    { value: 'paid', label: 'Đã thanh toán' },
+    { value: 'not yet paid', label: 'Chưa thanh toán' }
   ];
 
   const filteredInvoices = invoices.filter(inv => {
@@ -282,8 +283,8 @@ export default function InvoiceManagement() {
                     {inv.paymentDate ? new Date(inv.paymentDate).toLocaleDateString('vi-VN') : '---'}
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className={`inv-status-badge ${inv.status === 'Đã thanh toán' ? 'inv-status-paid' : 'inv-status-unpaid'}`}>
-                      {inv.status === 'Đã thanh toán' ? (
+                    <span className={`inv-status-badge ${inv.status === 'paid' ? 'inv-status-paid' : 'inv-status-unpaid'}`}>
+                      {inv.status === 'paid' ? (
                         <><CheckCircle2 size={13} /> Đã thanh toán</>
                       ) : (
                         <><Clock size={13} /> Chưa thanh toán</>
@@ -295,7 +296,7 @@ export default function InvoiceManagement() {
                       <button className="inv-act-btn" onClick={() => setSelectedInvoice(inv)}>
                         <Eye size={18} /> 
                       </button>
-                      {inv.status !== 'Đã thanh toán' && (
+                      {inv.status !== 'paid' && (
                         <button 
                           className="inv-act-btn inv-act-btn-success" 
                           onClick={() => handleOpenConfirmModal(inv)}

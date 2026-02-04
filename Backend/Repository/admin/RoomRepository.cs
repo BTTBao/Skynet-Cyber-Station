@@ -1,42 +1,28 @@
 ﻿using Backend.DTOs;
 using Backend.Models;
-using Backend.Repository.admin;
 using Microsoft.EntityFrameworkCore;
-
+using System.Text.Json;
 
 namespace Backend.Repository.admin
 {
     public interface IRoomRepository
     {
-
         Task<IEnumerable<Room>> GetAllAsync();
-
         Task<Room> GetByIdAsync(int roomId);
-
         Task<Room> AddAsync(Room room);
-
         Task<Room> UpdateAsync(Room room);
-
         Task<bool> DeleteAsync(int roomId);
         Task<bool> ExistsAsync(int roomId);
-
         Task<IEnumerable<RoomDto>> GetAllRoomsWithDetailsAsync();
-
-        Task<RoomDetailDto> GetRoomDetailAsync(int roomId);
-
+        Task<RoomDetailDto2> GetRoomDetailAsync(int roomId);
         Task<IEnumerable<RoomDto>> GetRoomsByFloorAsync(int floor);
-
         Task<IEnumerable<RoomDto>> GetRoomsByTypeAsync(int roomTypeId);
-
-
         Task<IEnumerable<RoomDto>> SearchRoomsAsync(string searchTerm);
-
-
         Task<IEnumerable<RoomDto>> GetAvailableRoomsAsync(DateTime startTime, DateTime endTime);
         Task<bool> IsRoomCodeExistsAsync(string roomCode, int? excludeRoomId = null);
-
         Task<int> GetTotalComputersInRoomAsync(int roomId);
     }
+
     public class RoomRepository : IRoomRepository
     {
         private readonly QuanLyPhongMayContext _context;
@@ -44,6 +30,65 @@ namespace Backend.Repository.admin
         public RoomRepository(QuanLyPhongMayContext context)
         {
             _context = context;
+        }
+
+        // ============================================
+        // HELPER METHOD - Parse Computer Specifications
+        // ============================================
+        private ComputerDto2 MapComputerToDto(Computer computer, string roomCode, string roomName)
+        {
+            var dto = new ComputerDto2
+            {
+                ComputerID = computer.ComputerId,
+                RoomID = computer.RoomId,
+                ComputerCode = $"{roomCode}-{computer.ComputerNumber:D2}",
+                ComputerNumber = computer.ComputerNumber,
+                ComputerName = computer.ComputerName,
+                Specifications = computer.Specifications,
+                Status = computer.Status?.ToLower() ?? "active",
+                RoomCode = roomCode,
+                RoomName = roomName
+            };
+
+            // Parse Specifications JSON nếu có
+            if (!string.IsNullOrWhiteSpace(computer.Specifications))
+            {
+                try
+                {
+                    var specs = JsonSerializer.Deserialize<Dictionary<string, string>>(computer.Specifications);
+                    if (specs != null)
+                    {
+                        dto.Brand = specs.ContainsKey("Brand") ? specs["Brand"] : "N/A";
+                        dto.CPU = specs.ContainsKey("CPU") ? specs["CPU"] : "N/A";
+                        dto.RAM = specs.ContainsKey("RAM") ? specs["RAM"] : "N/A";
+                        dto.Storage = specs.ContainsKey("Storage") ? specs["Storage"] : "N/A";
+                        dto.GPU = specs.ContainsKey("GPU") ? specs["GPU"] : "N/A";
+                        dto.OS = specs.ContainsKey("OS") ? specs["OS"] : "N/A";
+                    }
+                }
+                catch
+                {
+                    // Nếu không parse được JSON, set giá trị mặc định
+                    dto.Brand = "N/A";
+                    dto.CPU = "N/A";
+                    dto.RAM = "N/A";
+                    dto.Storage = "N/A";
+                    dto.GPU = "N/A";
+                    dto.OS = "N/A";
+                }
+            }
+            else
+            {
+                // Không có specifications
+                dto.Brand = "N/A";
+                dto.CPU = "N/A";
+                dto.RAM = "N/A";
+                dto.Storage = "N/A";
+                dto.GPU = "N/A";
+                dto.OS = "N/A";
+            }
+
+            return dto;
         }
 
         // ============================================
@@ -126,43 +171,43 @@ namespace Backend.Repository.admin
                 .ToListAsync();
         }
 
-        public async Task<RoomDetailDto> GetRoomDetailAsync(int roomId)
+        public async Task<RoomDetailDto2> GetRoomDetailAsync(int roomId)
         {
             var room = await _context.Rooms
                 .Include(r => r.RoomType)
                 .Include(r => r.Computers)
-                .Where(r => r.RoomId == roomId)
-                .Select(r => new RoomDetailDto
-                {
-                    RoomID = r.RoomId,
-                    RoomTypeID = r.RoomTypeId,
-                    RoomCode = r.RoomCode,
-                    RoomName = r.RoomName,
-                    Capacity = r.Capacity,
-                    Floor = r.Floor,
-                    Description = r.Description,
-                    Status = r.Status,
-                    TypeName = r.RoomType.TypeName,
-                    BasePrice = (decimal)r.RoomType.BasePrice,
-                    TotalComputers = r.Computers.Count,
-                    ActiveComputers = r.Computers.Count(c => c.Status == "Active"),
-                    BrokenComputers = r.Computers.Count(c => c.Status == "Broken"),
-                    MaintenanceComputers = r.Computers.Count(c => c.Status == "Maintenance"),
-                    Computers = r.Computers.Select(c => new ComputerDto
-                    {
-                        ComputerID = c.ComputerId,
-                        RoomID = c.RoomId,
-                        ComputerNumber = c.ComputerNumber,
-                        ComputerName = c.ComputerName,
-                        Specifications = c.Specifications,
-                        Status = c.Status,
-                        RoomCode = r.RoomCode,
-                        RoomName = r.RoomName
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(r => r.RoomId == roomId);
 
-            return room;
+            if (room == null)
+                return null;
+
+            // Map computers sau khi đã load từ database
+            var computersDto = new List<ComputerDto2>();
+            foreach (var computer in room.Computers.OrderBy(c => c.ComputerNumber))
+            {
+                computersDto.Add(MapComputerToDto(computer, room.RoomCode, room.RoomName));
+            }
+
+            var roomDetail = new RoomDetailDto2
+            {
+                RoomID = room.RoomId,
+                RoomTypeID = room.RoomTypeId,
+                RoomCode = room.RoomCode,
+                RoomName = room.RoomName,
+                Capacity = room.Capacity,
+                Floor = room.Floor,
+                Description = room.Description,
+                Status = room.Status,
+                TypeName = room.RoomType.TypeName,
+                BasePrice = (decimal)room.RoomType.BasePrice,
+                TotalComputers = room.Computers.Count,
+                ActiveComputers = room.Computers.Count(c => c.Status == "Active"),
+                BrokenComputers = room.Computers.Count(c => c.Status == "Broken"),
+                MaintenanceComputers = room.Computers.Count(c => c.Status == "Maintenance"),
+                Computers = computersDto
+            };
+
+            return roomDetail;
         }
 
         public async Task<IEnumerable<RoomDto>> GetRoomsByFloorAsync(int floor)
