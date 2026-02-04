@@ -200,7 +200,7 @@ namespace Backend.Controllers.Client
                     IncidentReports = user.IncidentReports.OrderByDescending(r => r.ReportId).Select(r => new ReportDto
                     {
                         ReportId = r.ReportId,
-                        Title = r.Title,
+                        //Title = r.Title,
                         Description = r.Description,
                         Status = r.Status ?? "Processing"
                     }).ToList()
