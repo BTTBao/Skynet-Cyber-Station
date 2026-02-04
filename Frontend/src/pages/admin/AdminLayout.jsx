@@ -23,6 +23,7 @@ export default function AdminLayout() {
     { path: 'bookings', label: 'Quản lý book phòng', icon: Calendar },
     { path: 'incidents', label: 'Quản lý sự cố', icon: AlertCircle },
     { path: 'invoices', label: 'Quản lý hóa đơn', icon: Menu },
+    { path: 'roomtype', label: 'Quản lý loại phòng', icon: Menu },
   ];
 
   return (
