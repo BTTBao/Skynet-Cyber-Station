@@ -38,12 +38,30 @@ export const RoomCalendar = ({
 
     // Lọc danh sách đặt phòng
     const getBookingsForDate = (date) => {
-        return bookings.filter(b => {
+        const result = bookings.filter(b => {
             const bookingDate = parseISO(b.date);
             const isSameDate = isSameDay(bookingDate, date);
-            const isRoomMatch = selectedRoomId === 'all' || b.roomId === selectedRoomId;
+
+            // Fix: So sánh lỏng (==) để handle string vs number
+            // selectedRoomId từ dropdown là string, b.roomId từ backend là number
+            const isRoomMatch = selectedRoomId === 'all' || b.roomId == selectedRoomId;
+
+            // Debug: Log để kiểm tra
+            if (isSameDate && process.env.NODE_ENV === 'development') {
+                console.log(`Booking filter:`, {
+                    selectedRoomId,
+                    bookingRoomId: b.roomId,
+                    roomIdType: typeof b.roomId,
+                    selectedRoomIdType: typeof selectedRoomId,
+                    isRoomMatch,
+                    status: b.status
+                });
+            }
+
             return isSameDate && isRoomMatch && b.status !== 'REJECTED';
         });
+
+        return result;
     };
 
     const handleSlotClick = (day, hour) => {

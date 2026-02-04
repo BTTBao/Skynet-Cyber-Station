@@ -121,7 +121,7 @@ const Home = () => {
         }
         let targetRoom = rooms.find(r => r.id === calendarSelectedRoomId)
         if (!targetRoom && calendarSelectedRoomId === "all") {
-            alert("Vui lòng chọn một phòng cụ thể từ menu thả xuống trước khi chọn giờ.")
+            alert("Vui lòng chọn một phòng cụ thể trước khi chọn giờ.")
             return
         }
         if (targetRoom) {

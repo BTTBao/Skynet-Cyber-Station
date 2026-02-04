@@ -2,6 +2,27 @@ import React from "react"
 import { CheckCircle2, FileText } from "lucide-react"
 
 export const ReportsView = ({ reports, rooms = [] }) => {
+    const getStatusDisplay = (status) => {
+        switch (status) {
+            case "processing":
+                return {
+                    className: "bg-blue-100 text-blue-700",
+                    label: "Đang xử lý"
+                };
+            case "resolved":
+                return {
+                    className: "bg-green-100 text-green-700",
+                    label: "Đã giải quyết"
+                };
+            case "not yet processed":
+            default:
+                return {
+                    className: "bg-yellow-100 text-yellow-700",
+                    label: "Đang chờ xử lý"
+                };
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {reports.length === 0 ? (
@@ -20,6 +41,7 @@ export const ReportsView = ({ reports, rooms = [] }) => {
                     // Nếu backend đã trả về roomName thì dùng luôn, không thì tìm trong mảng rooms
                     const roomName = report.title || rooms.find(r => r.id === report.roomId)?.name || `Phòng ${report.roomId}`;
 
+                    const statusInfo = getStatusDisplay(report.status);
                     return (
                         <div
                             key={report.id}
@@ -31,11 +53,8 @@ export const ReportsView = ({ reports, rooms = [] }) => {
                                         {roomName}
                                     </h3>
                                 </div>
-                                <span className={`px-3 py-1 text-xs rounded-full font-medium ${report.status === "OPEN"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-green-100 text-green-700"
-                                    }`}>
-                                    {report.status === "OPEN" ? "Đang chờ xử lý" : "Đã giải quyết"}
+                                <span className={`px-3 py-1 text-xs rounded-full font-medium ${statusInfo.className}`}>
+                                    {statusInfo.label}
                                 </span>
                             </div>
 

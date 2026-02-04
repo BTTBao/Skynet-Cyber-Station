@@ -57,7 +57,7 @@ namespace Backend.Controllers.Client
                     UserId = request.UserId,
                     Title = autoTitle,
                     Description = request.Description,
-                    Status = "OPEN"
+                    Status = "not yet processed"
                 };
 
                 _context.IncidentReports.Add(newReport);
