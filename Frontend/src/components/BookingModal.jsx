@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"; // Import navigate
+import { useNavigate } from "react-router-dom";
 import { UserRole } from "../data/type"
 import { X, Loader2 } from "lucide-react"
 import { DateTimeSelector } from "./booking/DateTimeSelector"
@@ -10,7 +10,7 @@ const API_BASE_URL = "https://localhost:7140/api";
 export const BookingModal = ({
     isOpen, onClose, room, currentUser, existingBookings, onConfirmBooking, initialDate, initialStartHour
 }) => {
-    const navigate = useNavigate(); // Hook chuyển trang
+    const navigate = useNavigate();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
     const [startHour, setStartHour] = useState(null)
     const [duration, setDuration] = useState(1)
@@ -29,7 +29,6 @@ export const BookingModal = ({
 
     if (!isOpen) return null
 
-    // Logic tính toán slots (giữ nguyên của bạn)
     const getBookedSlots = date => {
         return existingBookings
             .filter(b => b.roomId === room.id && b.date === date && b.status !== "REJECTED" && b.status !== "Cancelled")
@@ -46,23 +45,31 @@ export const BookingModal = ({
     // --- HÀM XỬ LÝ ĐẶT PHÒNG ---
     const handleBook = async () => {
         if (startHour === null) return
+        
+        // 1. Check token trước khi cho đặt
+        const token = localStorage.getItem("authToken"); // Hoặc "token" tùy cách bạn lưu lúc login
+        if (!token) {
+            alert("Vui lòng đăng nhập để đặt phòng!");
+            navigate("/login"); // Chuyển về trang login
+            return;
+        }
+
         for (let i = 0; i < duration; i++) {
             if (!isSlotAvailable(startHour + i)) {
-                alert("Bị trùng lịch rồi!"); return;
+                alert("Bị trùng lịch rồi! Vui lòng chọn giờ khác."); return;
             }
         }
-        if (!purpose.trim()) { alert("Nhập mục đích đi bạn!"); return; }
+        if (!purpose.trim()) { alert("Vui lòng nhập mục đích sử dụng!"); return; }
 
         setIsSubmitting(true)
 
-        // Fix giờ Local
         const formatLocalISO = (dateStr, hour) => {
             const h = hour.toString().padStart(2, '0');
             return `${dateStr}T${h}:00:00`;
         }
 
         const payload = {
-            userId: parseInt(currentUser.id || currentUser.userId),
+            // userId: ... -> XÓA DÒNG NÀY (Backend tự lấy từ Token)
             roomId: parseInt(room.roomId || room.RoomId || room.id),
             bookingDate: selectedDate,
             purpose: purpose,
@@ -71,17 +78,19 @@ export const BookingModal = ({
         };
 
         try {
-            const res = await fetch(`${API_BASE_URL}/RoomBookings`, {
+            const res = await fetch(`${API_BASE_URL}/client/RoomBookings`, { // Nhớ đúng route Backend (có chữ /client hay không tùy route bạn định nghĩa)
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // <--- QUAN TRỌNG: Phải có dòng này
+                },
                 body: JSON.stringify(payload),
             });
 
             if (res.ok) {
                 const data = await res.json();
-                onClose(); // Đóng modal
+                onClose();
                 
-                // NẾU CÓ INVOICE ID -> CHUYỂN SANG TRANG CHECKOUT
                 if (data.invoiceId) {
                     navigate(`/checkout/${data.invoiceId}`);
                 } else {
@@ -90,9 +99,15 @@ export const BookingModal = ({
                 }
             } else {
                 const err = await res.json();
-                alert(`Lỗi: ${err.message}`);
+                if (res.status === 401) {
+                    alert("Phiên đăng nhập hết hạn.");
+                    navigate("/login");
+                } else {
+                    alert(`Không thể đặt phòng: ${err.message || "Lỗi không xác định"}`);
+                }
             }
         } catch (error) {
+            console.error(error);
             alert("Lỗi kết nối server.");
         } finally {
             setIsSubmitting(false)
@@ -100,6 +115,7 @@ export const BookingModal = ({
     }
 
     return (
+        // (Giữ nguyên phần render của bạn)
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
                 <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">

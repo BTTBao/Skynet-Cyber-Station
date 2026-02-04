@@ -52,7 +52,7 @@ const Checkout = () => {
     // 2. Thanh toán (Gửi yêu cầu thanh toán cọc)
     const handlePayment = async () => {
         setProcessingPayment(true);
-        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+        const token = localStorage.getItem("authToken");
         try {
             const res = await fetch(`${API_BASE_URL}/Invoices/${invoiceId}/pay`, {
                 method: "POST",
@@ -94,7 +94,7 @@ const Checkout = () => {
                     <br/>Phòng đã được giữ chỗ cho bạn.
                 </p>
                 <div className="space-y-3">
-                    <button onClick={() => navigate('/history')} className="w-full py-3 bg-[#271756] text-white font-bold rounded-xl shadow-lg hover:bg-[#1a0f3d] transition">
+                    <button onClick={() => navigate('/')} className="w-full py-3 bg-[#271756] text-white font-bold rounded-xl shadow-lg hover:bg-[#1a0f3d] transition">
                         Xem lịch sử đặt phòng
                     </button>
                     <button onClick={() => navigate('/')} className="w-full py-3 bg-white text-gray-600 border border-gray-200 font-bold rounded-xl hover:bg-gray-50 transition">
