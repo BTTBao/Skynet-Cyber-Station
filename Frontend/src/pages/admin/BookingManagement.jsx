@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye, X,
-  Users, Calendar, AlignLeft, ChevronDown, Filter
+  Users, Calendar, AlignLeft, ChevronDown, Filter, PlusCircle, DollarSign
 } from 'lucide-react';
 
-// ─── CONSTANTS (static, không cần fetch từ API) ─────────────────────
+// ─── CONSTANTS ───────────────────────────────────────────────────────
 const REJECT_REASONS = [
   'Phòng đã được đặt trong giờ giấy trường',
   'Số lượng người vượt quá công suất phòng',
@@ -16,7 +16,7 @@ const REJECT_REASONS = [
   'Lý do khác'
 ];
 
-const API_BASE_URL = 'http://localhost:5270/api';
+const API_BASE_URL = 'https://localhost:7140/api';
 
 // ─── STYLES ──────────────────────────────────────────────────────────
 const CSS = `
@@ -88,6 +88,7 @@ const CSS = `
 .bk-abtn.view { color:#6366f1; } .bk-abtn.view:hover { border-color:#6366f1; background:#f5f3ff; }
 .bk-abtn.approve { color:#10b981; } .bk-abtn.approve:hover { border-color:#10b981; background:#ecfdf5; }
 .bk-abtn.reject { color:#ef4444; } .bk-abtn.reject:hover { border-color:#ef4444; background:#fef2f2; }
+.bk-abtn.invoice { color:#f59e0b; } .bk-abtn.invoice:hover { border-color:#f59e0b; background:#fffbeb; }
 .bk-abtn:disabled { opacity:.3; cursor:not-allowed; transform:none; box-shadow:none; }
 
 /* loading spinner */
@@ -97,6 +98,10 @@ const CSS = `
 /* error banner */
 .bk-error { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#dc2626; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; }
 .bk-error button { background:none; border:none; color:#dc2626; cursor:pointer; font-size:18px; line-height:1; }
+
+/* success banner */
+.bk-success { background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#059669; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; }
+.bk-success button { background:none; border:none; color:#059669; cursor:pointer; font-size:18px; line-height:1; }
 
 /* empty */
 .bk-empty { padding:56px 20px; text-align:center; color:#94a3b8; }
@@ -111,6 +116,8 @@ const CSS = `
 .bk-mh h3 { font-size:16px; color:#1e293b; font-weight:700; margin:0; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .bk-mh .mh-code { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#6366f1; background:#eef2ff; padding:2px 8px; border-radius:5px; font-weight:600; }
 .bk-mb { padding:20px 22px 22px; }
+.bk-mcl { background:none; border:none; cursor:pointer; color:#94a3b8; transition:.2s; padding:4px; border-radius:6px; }
+.bk-mcl:hover { background:#f1f5f9; color:#475569; }
 
 /* detail grid */
 .bk-dg { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
@@ -120,14 +127,32 @@ const CSS = `
 .bk-di.full { grid-column:1/-1; }
 .bk-di .di-purpose { color:#6366f1; }
 
+/* invoice form */
+.bk-inv-title { font-size:13px; font-weight:700; color:#f59e0b; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+.bk-inv-title svg { color:#f59e0b; }
+.bk-inv-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.bk-inv-field { background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:11px 14px; }
+.bk-inv-field.full { grid-column:1/-1; }
+.bk-inv-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:#64748b; font-weight:600; margin-bottom:6px; display:block; }
+.bk-inv-input { width:100%; padding:9px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13.5px; outline:none; font-family:inherit; transition:.2s; background:#fff; }
+.bk-inv-input:focus { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.12); }
+.bk-inv-input:disabled { background:#f8fafc; color:#94a3b8; cursor:not-allowed; }
+.bk-inv-select { width:100%; padding:9px 36px 9px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13.5px; outline:none; appearance:none; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 13px center; cursor:pointer; font-family:inherit; transition:.2s; }
+.bk-inv-select:focus { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.12); }
+.bk-inv-summary { background:#fffbeb; border:1.5px solid #fcd34d; border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+.bk-inv-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.bk-inv-row:last-child { margin-bottom:0; padding-top:10px; border-top:1.5px solid #fbbf24; }
+.bk-inv-row .label { font-size:12px; color:#92400e; font-weight:600; }
+.bk-inv-row .value { font-size:13.5px; color:#78350f; font-weight:700; font-family:'JetBrains Mono',monospace; }
+.bk-inv-row.total .label { font-size:13px; }
+.bk-inv-row.total .value { font-size:18px; color:#f59e0b; }
+
 /* reject form */
 .bk-rej-title { font-size:13px; font-weight:700; color:#dc2626; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
 .bk-rej-title svg { color:#dc2626; }
 .bk-rej-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:6px; display:block; }
 .bk-rej-sel { width:100%; padding:10px 36px 10px 13px; border:1.5px solid #e2e8f0; border-radius:9px; font-size:13.5px; outline:none; appearance:none; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 13px center; cursor:pointer; color:#1e293b; font-family:inherit; margin-bottom:12px; transition:.2s; }
 .bk-rej-sel:focus { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.12); }
-.bk-rej-ta { width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:9px; font-size:13.5px; outline:none; resize:vertical; min-height:72px; color:#1e293b; font-family:inherit; transition:.2s; }
-.bk-rej-ta:focus { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.12); }
 
 /* rejected reason box in detail */
 .bk-rej-box { background:#fef2f2; border:1px solid #fecaca; border-radius:9px; padding:12px 14px; margin-top:2px; }
@@ -142,14 +167,13 @@ const CSS = `
 .bk-bsb:hover { background:#334155; }
 .bk-bsb.btn-approve { background:#10b981; } .bk-bsb.btn-approve:hover { background:#059669; }
 .bk-bsb.btn-reject { background:#ef4444; } .bk-bsb.btn-reject:hover { background:#dc2626; }
+.bk-bsb.btn-invoice { background:#f59e0b; } .bk-bsb.btn-invoice:hover { background:#d97706; }
 .bk-bsb:disabled { opacity:.4; cursor:not-allowed; }
 
 /* confirm mini-modal */
 .bk-confirm { max-width:400px; }
 .bk-confirm-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
 .bk-confirm-icon.ci-approve { background:#ecfdf5; color:#10b981; }
-.bk-confirm h4 { text-align:center; font-size:16px; color:#1e293b; margin-bottom:6px; }
-.bk-confirm p { text-align:center; font-size:13px; color:#64748b; line-height:1.5; }
 
 /* ─── isUsed section ─── */
 .bk-used-box { margin-top:16px; padding:14px 16px; border-radius:10px; border:1.5px solid #e2e8f0; background:#f8fafc; }
@@ -165,7 +189,8 @@ const CSS = `
 .bk-used-btn.cancel { background:#fff; color:#64748b; border-color:#e2e8f0; }
 .bk-used-btn.cancel:hover { background:#f1f5f9; border-color:#cbd5e1; }
 
-/* responsive */@media(max-width:900px){ .bk-stats{grid-template-columns:repeat(2,1fr);} }
+/* responsive */
+@media(max-width:900px){ .bk-stats{grid-template-columns:repeat(2,1fr);} .bk-inv-grid{grid-template-columns:1fr;} }
 @media(max-width:600px){ .bk-stats{grid-template-columns:1fr 1fr;} .bk-toolbar{flex-direction:column;align-items:stretch;} .bk-search{max-width:100%;} .bk-dg{grid-template-columns:1fr;} }
 `;
 
@@ -179,6 +204,25 @@ const statusLabel = s => ({ pending:'Chờ duyệt', approved:'Đã duyệt', re
 const statusCls   = s => ({ pending:'bk-sb-pend', approved:'bk-sb-appr', rejected:'bk-sb-rej' }[s]);
 const rowCls      = s => ({ pending:'row-pending', approved:'row-approved', rejected:'row-rejected' }[s]);
 
+// Helper: tính số giờ giữa 2 thời điểm
+const calculateHours = (timeIn, timeOut) => {
+  if (!timeIn || !timeOut || timeIn === '--:--' || timeOut === '--:--') return 0;
+  
+  const [inHour, inMin] = timeIn.split(':').map(Number);
+  const [outHour, outMin] = timeOut.split(':').map(Number);
+  
+  const inMinutes = inHour * 60 + inMin;
+  const outMinutes = outHour * 60 + outMin;
+  
+  const totalMinutes = outMinutes - inMinutes;
+  return totalMinutes / 60; // trả về số giờ (decimal)
+};
+
+// Helper: format tiền VND
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+};
+
 // ─── COMPONENT ───────────────────────────────────────────────────────
 export default function BookingManagement() {
   // ── state ─────────────────────────────────────────────────────────
@@ -188,15 +232,24 @@ export default function BookingManagement() {
   const [filterStatus, setFilterStatus]     = useState('all');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState(null);
+  const [success, setSuccess]               = useState(null);
 
   // modals
   const [viewItem,    setViewItem]          = useState(null);
   const [rejectItem,  setRejectItem]        = useState(null);
   const [confirmItem, setConfirmItem]       = useState(null);
+  const [invoiceItem, setInvoiceItem]       = useState(null);
 
   // reject form
   const [rejReason,   setRejReason]         = useState(REJECT_REASONS[0]);
   const [rejNote,     setRejNote]           = useState('');
+
+  // invoice form
+  const [invoiceData, setInvoiceData]       = useState({
+    deposit: 0,
+    status: 'Pending',
+    paymentDate: null
+  });
 
   // ── API helpers ───────────────────────────────────────────────────
   const fetchBookings = useCallback(async () => {
@@ -266,20 +319,19 @@ export default function BookingManagement() {
   }, [bookings, filterStatus]);
 
   // ── actions ───────────────────────────────────────────────────────
-  // Duyệt: PATCH /api/bookings/{id}/approve
+  // Duyệt
   const approve = async (id) => {
     try {
       const res    = await fetch(`${API_BASE_URL}/bookings/${id}/approve`, { method: 'PATCH' });
       const result = await res.json();
 
       if (result.success) {
-        // optimistic update: đổi status ngay trên UI
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved', rejectedReason: '' } : b));
         setConfirmItem(null);
-        // sync viewItem nếu đang mở detail modal của item này
         if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status: 'approved', rejectedReason: '' }));
-        // refresh stats
         await fetchStatistics();
+        setSuccess('Duyệt đặt phòng thành công!');
+        setTimeout(() => setSuccess(null), 3000);
       } else {
         alert(result.message || 'Duyệt thất bại');
       }
@@ -288,9 +340,8 @@ export default function BookingManagement() {
     }
   };
 
-  // Từ chối: PATCH /api/bookings/{id}/reject  body: { reason }
+  // Từ chối
   const reject = async (id) => {
-    // Build reason string: nếu chọn "Lý do khác" → dùng rejNote, nếu có note thêm → append
     const reason = rejReason === 'Lý do khác'
       ? (rejNote.trim() || 'Lý do khác')
       : rejReason + (rejNote.trim() ? ` — ${rejNote.trim()}` : '');
@@ -299,18 +350,19 @@ export default function BookingManagement() {
       const res = await fetch(`${API_BASE_URL}/bookings/${id}/reject`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ reason })   // → maps to RejectBookingDto.Reason
+        body:    JSON.stringify({ reason })
       });
       const result = await res.json();
 
       if (result.success) {
-        // optimistic update
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'rejected', rejectedReason: reason } : b));
         setRejectItem(null);
         setRejReason(REJECT_REASONS[0]);
         setRejNote('');
         if (viewItem?.id === id) setViewItem(prev => ({ ...prev, status: 'rejected', rejectedReason: reason }));
         await fetchStatistics();
+        setSuccess('Từ chối đặt phòng thành công!');
+        setTimeout(() => setSuccess(null), 3000);
       } else {
         alert(result.message || 'Từ chối thất bại');
       }
@@ -319,23 +371,75 @@ export default function BookingManagement() {
     }
   };
 
-  // Đánh dấu dùng phòng: PATCH /api/bookings/{id}/mark-used
-  const markAsUsed = async (id) => {
+  // Đánh dấu dùng phòng
+  const markAsUsed = async (id, isUsed) => {
     try {
-      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/mark-used`, { method: 'PATCH' });
+      const res    = await fetch(`${API_BASE_URL}/bookings/${id}/mark-used`, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isUsed })
+      });
       const result = await res.json();
 
       if (result.success) {
-        // optimistic update
-        setBookings(prev => prev.map(b => b.id === id ? { ...b, isUsed: true } : b));
-        // sync viewItem nếu đang mở detail modal
-        if (viewItem?.id === id) setViewItem(prev => ({ ...prev, isUsed: true }));
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, isUsed } : b));
+        if (viewItem?.id === id) setViewItem(prev => ({ ...prev, isUsed }));
+        setSuccess('Cập nhật trạng thái sử dụng phòng thành công!');
+        setTimeout(() => setSuccess(null), 3000);
       } else {
         alert(result.message || 'Đánh dấu sử dụng thất bại');
       }
     } catch {
       alert('Lỗi kết nối đến server');
     }
+  };
+
+  // Tạo hóa đơn
+  const createInvoice = async (booking) => {
+    const hours = calculateHours(booking.timeIn, booking.timeOut);
+    const totalAmount = booking.price * hours;
+
+    const payload = {
+      bookingID: booking.id,
+      totalAmount: totalAmount,
+      deposit: invoiceData.deposit || 0,
+      status: invoiceData.status,
+      paymentDate: invoiceData.paymentDate
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/Invoicess`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        // Cập nhật isBillCreated = true
+        setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, isBillCreated: true } : b));
+        if (viewItem?.id === booking.id) setViewItem(prev => ({ ...prev, isBillCreated: true }));
+        
+        setInvoiceItem(null);
+        setInvoiceData({ deposit: 0, status: 'Pending', paymentDate: null });
+        setSuccess('Tạo hóa đơn thành công!');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        alert(result.message || 'Tạo hóa đơn thất bại');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối đến server');
+    }
+  };
+
+  // Open invoice modal
+  const openInvoiceModal = (booking) => {
+    setInvoiceItem(booking);
+    setInvoiceData({
+      deposit: 0,
+      status: 'Pending',
+      paymentDate: null
+    });
   };
 
   return (
@@ -357,7 +461,15 @@ export default function BookingManagement() {
           </div>
         )}
 
-        {/* Stats ── dùng statistics từ API ──────────────────────────── */}
+        {/* Success banner */}
+        {success && (
+          <div className="bk-success">
+            <span>✓ {success}</span>
+            <button onClick={() => setSuccess(null)}>×</button>
+          </div>
+        )}
+
+        {/* Stats */}
         <div className="bk-stats">
           <div className="bk-sc bk-blue">
             <div><div className="sv">{statistics.total}</div><div className="sl">Tổng đặt phòng</div></div>
@@ -413,11 +525,10 @@ export default function BookingManagement() {
                   <th style={{ textAlign:'center' }}>Số người</th>
                   <th>Mục đích</th>
                   <th>Trạng thái</th>
-                  <th style={{ textAlign:'center', width:120 }}>Thao tác</th>
+                  <th style={{ textAlign:'center', width:140 }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Loading */}
                 {loading && (
                   <tr>
                     <td colSpan={9} style={{ textAlign:'center', padding:'48px 0' }}>
@@ -426,7 +537,6 @@ export default function BookingManagement() {
                   </tr>
                 )}
 
-                {/* Data rows */}
                 {!loading && filtered.length > 0 && filtered.map(b => (
                   <tr key={b.id} className={rowCls(b.status)}>
                     <td>
@@ -455,19 +565,22 @@ export default function BookingManagement() {
                         <button className="bk-abtn reject" title="Từ chối" disabled={b.status !== 'pending'} onClick={() => { setRejectItem(b); setRejReason(REJECT_REASONS[0]); setRejNote(''); }}>
                           <XCircle size={15}/>
                         </button>
-                        <button className="bk-abtn reject" title="Từ chối" disabled={b.status !== 'pending'} onClick={() => { setRejectItem(b); setRejReason(REJECT_REASONS[0]); setRejNote(''); }}>
-                          <XCircle size={15}/>
+                        <button 
+                          className="bk-abtn invoice" 
+                          title={b.isBillCreated ? "Đã tạo hóa đơn" : "Tạo hóa đơn"}
+                          disabled={b.isBillCreated || b.status !== 'approved'} 
+                          onClick={() => openInvoiceModal(b)}
+                        >
+                          <PlusCircle size={15}/>
                         </button>
                         <button className="bk-abtn view" title="Xem chi tiết" onClick={() => setViewItem(b)}>
                           <Eye size={15}/>
                         </button>
-                        
                       </div>
                     </td>
                   </tr>
                 ))}
 
-                {/* Empty */}
                 {!loading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={9} className="bk-empty">
@@ -536,30 +649,42 @@ export default function BookingManagement() {
                 </div>
               )}
 
-              {/* ── isUsed section: chỉ hiển thị khi status === approved ── */}
               {viewItem.status === 'approved' && (
                 <div className="bk-used-box">
-                  <div className="ub-title"><CheckCircle2 size={12}/> Trạng thái sử dụng phòng</div>
+                  <div className="ub-title">
+                    <CheckCircle2 size={12} /> Trạng thái sử dụng phòng
+                  </div>
 
-                  {/* Đã dùng → show badge */}
-                  {viewItem.isUsed ? (
+                  {viewItem.isUsed === true ? (
+                    // ĐÃ SỬ DỤNG
                     <div className="bk-used-badge">
-                      <CheckCircle2 size={18}/>
+                      <CheckCircle2 size={18} />
                       <span>Phòng đã được sử dụng</span>
                     </div>
                   ) : (
-                    // Chưa dùng → show 2 nút
-                    <div className="bk-used-btns">
-                      <button className="bk-used-btn cancel" onClick={() => setViewItem(null)}>
-                        <XCircle size={15}/> Không dùng
+                    // CHƯA SỬ DỤNG
+                    <>
+                      <div
+                        className="bk-used-badge"
+                        style={{ background: '#fef2f2', border: '1px solid #fecaca' }}
+                      >
+                        <XCircle size={18} style={{ color: '#ef4444' }} />
+                        <span style={{ color: '#dc2626' }}>
+                          Phòng chưa được sử dụng
+                        </span>
+                      </div>
+
+                      <button
+                        className="bk-used-btn confirm mt-2"
+                        onClick={() => markAsUsed(viewItem.id)}
+                      >
+                        <CheckCircle2 size={15} /> Mark as done
                       </button>
-                      <button className="bk-used-btn confirm" onClick={() => markAsUsed(viewItem.id)}>
-                        <CheckCircle2 size={15}/> Xác nhận dùng phòng
-                      </button>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
+
 
               {viewItem.status === 'pending' && (
                 <div className="bk-fac">
@@ -596,9 +721,6 @@ export default function BookingManagement() {
               <select className="bk-rej-sel" value={rejReason} onChange={e => setRejReason(e.target.value)}>
                 {REJECT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
-              <label className="bk-rej-label">Ghi chú thêm {rejReason === 'Lý do khác' && <span style={{ color:'#ef4444' }}>*</span>}</label>
-              <textarea className="bk-rej-ta" value={rejNote} onChange={e => setRejNote(e.target.value)} placeholder="Nhập chi tiết lý do từ chối..." />
-
               <div className="bk-fac">
                 <button className="bk-bcn" onClick={() => setRejectItem(null)}>Hủy</button>
                 <button className="bk-bsb btn-reject" disabled={rejReason === 'Lý do khác' && !rejNote.trim()} onClick={() => reject(rejectItem.id)}>
@@ -631,6 +753,123 @@ export default function BookingManagement() {
                 <button className="bk-bcn" onClick={() => setConfirmItem(null)}>Hủy</button>
                 <button className="bk-bsb btn-approve" onClick={() => approve(confirmItem.booking.id)}>
                   <CheckCircle2 size={15}/> Duyệt
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────── CREATE INVOICE MODAL ────────── */}
+      {invoiceItem && (
+        <div className="bk-ov" onClick={() => setInvoiceItem(null)}>
+          <div className="bk-modal" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+            <div className="bk-mh">
+              <h3><DollarSign size={16} style={{ color:'#f59e0b' }}/> Tạo hóa đơn <span className="mh-code">{invoiceItem.code}</span></h3>
+              <button className="bk-mcl" onClick={() => setInvoiceItem(null)}><X size={15}/></button>
+            </div>
+            <div className="bk-mb">
+              <div className="bk-inv-title"><DollarSign size={15}/> Thông tin hóa đơn</div>
+
+              {/* Thông tin booking */}
+              <div className="bk-inv-grid">
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><Users size={10}/> Khách hàng</label>
+                  <input type="text" className="bk-inv-input" value={invoiceItem.name} disabled />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><Calendar size={10}/> Mã phòng</label>
+                  <input type="text" className="bk-inv-input" value={invoiceItem.roomCode} disabled />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><Calendar size={10}/> Ngày đặt</label>
+                  <input type="text" className="bk-inv-input" value={invoiceItem.date} disabled />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><Clock size={10}/> Giờ hoạt động</label>
+                  <input 
+                    type="text" 
+                    className="bk-inv-input" 
+                    value={`${invoiceItem.timeIn} - ${invoiceItem.timeOut}`} 
+                    disabled 
+                  />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><DollarSign size={10}/> Đơn giá/giờ</label>
+                  <input 
+                    type="text" 
+                    className="bk-inv-input" 
+                    value={formatCurrency(invoiceItem.price)} 
+                    disabled 
+                  />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><Clock size={10}/> Tổng giờ</label>
+                  <input 
+                    type="text" 
+                    className="bk-inv-input" 
+                    value={`${calculateHours(invoiceItem.timeIn, invoiceItem.timeOut).toFixed(2)} giờ`} 
+                    disabled 
+                  />
+                </div>
+
+                {/* Form input */}
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><DollarSign size={10}/> Tiền đặt cọc (VND)</label>
+                  <input 
+                    type="number" 
+                    className="bk-inv-input" 
+                    placeholder="0"
+                    value={invoiceData.deposit || ''}
+                    onChange={e => setInvoiceData(prev => ({ ...prev, deposit: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="bk-inv-field">
+                  <label className="bk-inv-label"><CheckCircle2 size={10}/> Trạng thái thanh toán</label>
+                  <select 
+                    className="bk-inv-select"
+                    value={invoiceData.status}
+                    onChange={e => setInvoiceData(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="Pending">Chờ thanh toán</option>
+                    <option value="Paid">Đã thanh toán</option>
+                    <option value="Cancelled">Đã hủy</option>
+                  </select>
+                </div>
+                <div className="bk-inv-field full">
+                  <label className="bk-inv-label"><Calendar size={10}/> Ngày thanh toán (tùy chọn)</label>
+                  <input 
+                    type="datetime-local" 
+                    className="bk-inv-input"
+                    value={invoiceData.paymentDate || ''}
+                    onChange={e => setInvoiceData(prev => ({ ...prev, paymentDate: e.target.value || null }))}
+                  />
+                </div>
+              </div>
+
+              {/* Tổng kết */}
+              <div className="bk-inv-summary">
+                <div className="bk-inv-row">
+                  <span className="label">Tạm tính:</span>
+                  <span className="value">{formatCurrency(invoiceItem.price * calculateHours(invoiceItem.timeIn, invoiceItem.timeOut))}</span>
+                </div>
+                <div className="bk-inv-row">
+                  <span className="label">Đặt cọc:</span>
+                  <span className="value">-{formatCurrency(invoiceData.deposit || 0)}</span>
+                </div>
+                <div className="bk-inv-row total">
+                  <span className="label">TỔNG CỘNG:</span>
+                  <span className="value">{formatCurrency((invoiceItem.price * calculateHours(invoiceItem.timeIn, invoiceItem.timeOut)) - (invoiceData.deposit || 0))}</span>
+                </div>
+              </div>
+
+              <div className="bk-fac">
+                <button className="bk-bcn" onClick={() => setInvoiceItem(null)}>Hủy</button>
+                <button 
+                  className="bk-bsb btn-invoice" 
+                  onClick={() => createInvoice(invoiceItem)}
+                >
+                  <PlusCircle size={15}/> Tạo hóa đơn
                 </button>
               </div>
             </div>

@@ -28,7 +28,7 @@ namespace Backend.Controllers.Client
                     {
                         id = r.ReportId,
                         userId = r.UserId,
-                        title = r.Title,
+                        // title = r.Title,
                         description = r.Description,
                         status = r.Status,
                         timestamp = DateTime.Now
@@ -55,7 +55,7 @@ namespace Backend.Controllers.Client
                 var newReport = new IncidentReport
                 {
                     UserId = request.UserId,
-                    Title = autoTitle,
+                    // Title = autoTitle,
                     Description = request.Description,
                     Status = "not yet processed"
                 };

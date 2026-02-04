@@ -10,7 +10,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5270/api';
+const API_BASE_URL = 'https://localhost:7140/api';
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoomDetail from './RoomDetail';
 import {
   Search,
@@ -7,41 +7,43 @@ import {
   X,
   Monitor,
   Layers,
-  Filter,
-  ChevronDown,
   CheckCircle2,
   AlertCircle,
   XCircle
 } from 'lucide-react';
-
-const initialRooms = [
-  { id: 1, code: 'PC-101', name: 'Phòng Lập Trình A', type: 'Lập trình', totalComputers: 24, floor: 1, description: 'Phòng máy tính dành cho lớp lập trình cơ bản', status: 'active', computers: Array.from({ length: 24 }, (_, i) => ({ id: i + 1, code: `PC101-${String(i + 1).padStart(2, '0')}`, brand: 'Dell OptiPlex 7090', cpu: 'Intel Core i7-10700', ram: '16GB DDR4', storage: '512GB SSD', gpu: 'Intel UHD 630', os: 'Windows 10 Pro', status: i % 5 === 0 ? 'broken' : 'active', note: i % 5 === 0 ? 'Lỗi card đồ hoạ' : '' })) },
-  { id: 2, code: 'PC-102', name: 'Phòng Đồ Họa B', type: 'Đồ họa', totalComputers: 16, floor: 1, description: 'Phòng máy tính cao cấu dành cho thiết kế đồ họa', status: 'active', computers: Array.from({ length: 16 }, (_, i) => ({ id: i + 1, code: `PC102-${String(i + 1).padStart(2, '0')}`, brand: 'Apple iMac Pro', cpu: 'Intel Xeon W-2150B', ram: '32GB ECC', storage: '1TB SSD', gpu: 'AMD Radeon Pro Vega 56', os: 'macOS Big Sur', status: i === 3 || i === 7 ? 'maintenance' : 'active', note: i === 3 ? 'Đang bảo dưỡng ổĐĐa cứng' : i === 7 ? 'Cập nhật phần mềm' : '' })) },
-  { id: 3, code: 'PC-201', name: 'Phòng Hệ Thống C', type: 'Hệ thống', totalComputers: 20, floor: 2, description: 'Phòng máy tính dành cho môn học hệ thống tính toán', status: 'active', computers: Array.from({ length: 20 }, (_, i) => ({ id: i + 1, code: `PC201-${String(i + 1).padStart(2, '0')}`, brand: 'Lenovo ThinkPad X1', cpu: 'Intel Core i5-10210U', ram: '8GB DDR4', storage: '256GB SSD', gpu: 'Intel UHD 620', os: 'Ubuntu 20.04 LTS', status: i === 2 || i === 10 || i === 15 ? 'broken' : 'active', note: i === 2 ? 'Không boot được' : i === 10 ? 'Ổng cứng hỏng' : i === 15 ? 'Dây cáp mất' : '' })) },
-  { id: 4, code: 'PC-202', name: 'Phòng AI & ML D', type: 'AI & ML', totalComputers: 8, floor: 2, description: 'Phòng máy tính GPU cao cấu dành cho Artificial Intelligence', status: 'maintenance', computers: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, code: `PC202-${String(i + 1).padStart(2, '0')}`, brand: 'NVIDIA DGX A100', cpu: 'AMD EPYC 7742', ram: '128GB DDR4', storage: '2TB NVMe SSD', gpu: 'NVIDIA A100 80GB', os: 'Ubuntu 22.04 LTS', status: i < 2 ? 'maintenance' : 'active', note: i === 0 ? 'Nâng cấp GPU' : i === 1 ? 'Thay thế PSU' : '' })) },
-  { id: 5, code: 'PC-301', name: 'Phòng Mạng Máy E', type: 'Mạng máy', totalComputers: 30, floor: 3, description: 'Phòng thực hành mạng máy tính với cấu hình server', status: 'active', computers: Array.from({ length: 30 }, (_, i) => ({ id: i + 1, code: `PC301-${String(i + 1).padStart(2, '0')}`, brand: 'HP EliteDesk 800 G8', cpu: 'Intel Core i7-10700', ram: '16GB DDR4', storage: '512GB SSD', gpu: 'Intel UHD 630', os: 'Windows Server 2022', status: i === 5 || i === 12 || i === 20 || i === 27 ? 'broken' : 'active', note: i === 5 ? 'Card mạng hỏng' : i === 12 ? 'Nguồn không ổn định' : i === 20 ? 'Lỗi BIOS' : i === 27 ? 'Cần thay RAM' : '' })) },
-  { id: 6, code: 'PC-302', name: 'Phòng Cơ Sở Dữ Liệu F', type: 'Cơ sở dữ liệu', totalComputers: 18, floor: 3, description: 'Phòng thực hành quản trị cơ sở dữ liệu', status: 'active', computers: Array.from({ length: 18 }, (_, i) => ({ id: i + 1, code: `PC302-${String(i + 1).padStart(2, '0')}`, brand: 'Dell PowerEdge R740', cpu: 'Intel Xeon Gold 6248', ram: '64GB ECC DDR4', storage: '1TB SSD', gpu: 'Intel UHD', os: 'CentOS 7', status: i === 9 ? 'maintenance' : 'active', note: i === 9 ? 'Backup dữ liệu' : '' })) },
-  { id: 7, code: 'PC-401', name: 'Phòng Multimedia G', type: 'Đồ họa', totalComputers: 12, floor: 4, description: 'Phòng chuyên dụng cho thiết kế multimedia và video editing', status: 'active', computers: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `PC401-${String(i + 1).padStart(2, '0')}`, brand: 'Apple Mac Pro', cpu: 'AMD Ryzen Threadripper 3990X', ram: '256GB DDR4', storage: '4TB SSD', gpu: 'AMD Radeon RX 6900 XT', os: 'macOS Monterey', status: i === 1 || i === 8 ? 'broken' : 'active', note: i === 1 ? 'Không xuất HDMI' : i === 8 ? 'Quạt làm mát hỏng' : '' })) },
-  { id: 8, code: 'PC-402', name: 'Phòng Thi Trực Tuyến H', type: 'Thi cử', totalComputers: 40, floor: 4, description: 'Phòng máy tính dành riêng cho thi cử trực tuyến', status: 'active', computers: Array.from({ length: 40 }, (_, i) => ({ id: i + 1, code: `PC402-${String(i + 1).padStart(2, '0')}`, brand: 'Lenovo IdeaPad 5', cpu: 'Intel Core i5-1135G7', ram: '8GB DDR4', storage: '256GB SSD', gpu: 'Intel Iris Xe 80 EUs', os: 'Windows 10 Pro', status: [3, 7, 11, 19, 25, 33].includes(i) ? 'broken' : 'active', note: [3, 7, 11, 19, 25, 33].includes(i) ? 'Cần kiểm tra' : '' })) },
-  { id: 9, code: 'PC-501', name: 'Phòng Research I', type: 'Nghiên cứu', totalComputers: 10, floor: 5, description: 'Phòng máy tính dành cho các dự án nghiên cứu khoa học', status: 'active', computers: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, code: `PC501-${String(i + 1).padStart(2, '0')}`, brand: 'Supermicro X11SPH', cpu: 'Intel Xeon Platinum 8280', ram: '512GB DDR4 ECC', storage: '8TB NVMe', gpu: 'NVIDIA RTX A6000', os: 'Linux Mint 21', status: i === 4 ? 'maintenance' : 'active', note: i === 4 ? 'Nâng cấp hệ thống' : '' })) },
-  { id: 10, code: 'PC-502', name: 'Phòng Cloud Computing J', type: 'Cloud', totalComputers: 6, floor: 5, description: 'Phòng thực hành cloud computing và DevOps', status: 'maintenance', computers: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, code: `PC502-${String(i + 1).padStart(2, '0')}`, brand: 'Dell R750', cpu: 'Intel Xeon E5-2680 v4', ram: '128GB DDR4', storage: '2TB SSD', gpu: 'NVIDIA Tesla V100', os: 'Kubernetes / Docker', status: i < 2 ? 'maintenance' : 'active', note: i === 0 ? 'Setup cluster mới' : i === 1 ? 'Cấu hình container' : '' })) }
-];
+import axios from 'axios';
 
 export default function RoomManagement() {
-  const [rooms, setRooms] = useState(initialRooms);
+  const [rooms, setRooms] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFloor, setSelectedFloor] = useState(0);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [formData, setFormData] = useState({ type: 'Lập trình', code: '', name: '', totalComputers: 8, floor: 1, description: '' });
+  const [formData, setFormData] = useState({ typeName: 'Phòng Cơ bản', roomCode: '', roomName: '', totalComputers: 8, floor: 1, description: '' });
 
   const floors = [0, 1, 2, 3, 4, 5];
-  const roomTypes = ['Lập trình', 'Đồ họa', 'Hệ thống', 'AI & ML', 'Mạng máy', 'Cơ sở dữ liệu', 'Multimedia', 'Thi cử', 'Nghiên cứu', 'Cloud'];
+  const roomTypes = ['Phòng Cơ bản', 'Phòng AI', 'Phòng Đồ họa', 'Phòng Hệ thống', 'Phòng Cloud'];
 
-  const filteredRooms = rooms.filter(r => {
-    const matchSearch = r.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.type.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchRooms = async () => {
+    try {
+      const res = await axios.get("https://localhost:7140/api/rooms");
+      setRooms(res.data);
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi khi tải danh sách phòng!");
+    }
+  };
+
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  // Filter phòng
+  const filteredRooms = rooms.filter((r) => {
+    const matchSearch =
+      r.roomCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.roomName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.typeName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchFloor = selectedFloor === 0 || r.floor === selectedFloor;
     return matchSearch && matchFloor;
   });
@@ -51,44 +53,22 @@ export default function RoomManagement() {
     setFormData(prev => ({ ...prev, [name]: name === 'totalComputers' || name === 'floor' ? Number(value) : value }));
   };
 
-  const handleCreateRoom = (e) => {
+  // Tạo phòng mới
+  const handleCreateRoom = async (e) => {
     e.preventDefault();
-    const newRoom = {
-      id: rooms.length + 1,
-      ...formData,
-      status: 'active',
-      computers: Array.from({ length: formData.totalComputers }, (_, i) => ({
-        id: i + 1,
-        code: `${formData.code}-${String(i + 1).padStart(2, '0')}`,
-        brand: 'Dell OptiPlex 7090',
-        cpu: 'Intel Core i7-10700',
-        ram: '16GB DDR4',
-        storage: '512GB SSD',
-        gpu: 'Intel UHD 630',
-        os: 'Windows 10 Pro',
-        status: 'active',
-        note: ''
-      }))
-    };
-    setRooms([...rooms, newRoom]);
-    setFormData({ type: 'Lập trình', code: '', name: '', totalComputers: 8, floor: 1, description: '' });
-    setShowCreateForm(false);
-  };
-
-  const getComputerStats = (room) => {
-    const active = room.computers.filter(c => c.status === 'active').length;
-    const broken = room.computers.filter(c => c.status === 'broken').length;
-    const maintenance = room.computers.filter(c => c.status === 'maintenance').length;
-    return { active, broken, maintenance };
-  };
-
-  const getTypeBadge = (type) => {
-    const map = { 'Lập trình': '#3b82f6', 'Đồ họa': '#ec4899', 'Hệ thống': '#8b5cf6', 'AI & ML': '#f59e0b', 'Mạng máy': '#10b981', 'Cơ sở dữ liệu': '#06b6d4', 'Multimedia': '#ef4444', 'Thi cử': '#6366f1', 'Nghiên cứu': '#14b8a6', 'Cloud': '#f97316' };
-    return map[type] || '#64748b';
+    try {
+      const res = await axios.post('https://localhost:7140/api/rooms', formData);
+      setRooms([...rooms, res.data]);
+      setFormData({ typeName: 'Phòng Cơ bản', roomCode: '', roomName: '', totalComputers: 8, floor: 1, description: '' });
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || 'Tạo phòng thất bại!');
+    }
   };
 
   if (selectedRoom) {
-    return <RoomDetail room={selectedRoom} onBack={() => setSelectedRoom(null)} onUpdate={(updatedRoom) => { setRooms(rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r)); setSelectedRoom(updatedRoom); }} />;
+    return <RoomDetail room={selectedRoom} onBack={() => setSelectedRoom(null)} onUpdate={(updatedRoom) => { setRooms(rooms.map(r => r.roomID === updatedRoom.roomID ? updatedRoom : r)); setSelectedRoom(updatedRoom); }} />;
   }
 
   return (
@@ -131,18 +111,15 @@ export default function RoomManagement() {
         .rm-table tr:hover td { background: #fafbfd; }
         .rm-code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #6366f1; font-weight: 600; background: #eef2ff; padding: 3px 8px; border-radius: 5px; }
         .rm-name { font-weight: 600; color: #1e293b; }
-        .rm-type-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff; }
         .rm-status-row { display: flex; gap: 10px; }
         .rm-status-chip { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; }
         .rm-status-chip .dot { width: 7px; height: 7px; border-radius: 50%; }
         .dot-green { background: #10b981; } .dot-red { background: #ef4444; } .dot-amber { background: #f59e0b; }
-        .rm-status-chip.green { color: #059669; } .rm-status-chip.red { color: #dc2626; } .rm-status-chip.amber { color: #d97706; }
         .rm-state-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 600; }
         .rm-state-active { background: #ecfdf5; color: #059669; }
         .rm-state-maint { background: #fffbeb; color: #d97706; }
         .rm-empty { padding: 60px 20px; text-align: center; color: #94a3b8; }
         .rm-empty svg { margin-bottom: 12px; opacity: 0.5; }
-
         /* Modal */
         .rm-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); animation: rmFadeIn 0.2s; }
         @keyframes rmFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -169,13 +146,11 @@ export default function RoomManagement() {
       `}</style>
 
       <div className="rm-root">
-        {/* Header */}
         <div className="rm-header">
           <h1><Layers size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />Quản lý Phòng Máy Tính</h1>
           <p>Giám sát toàn bộ phòng máy tính, theo dõi trạng thái và thiết bị</p>
         </div>
 
-        {/* Stats */}
         <div className="rm-stats">
           <div className="rm-stat-card color-blue">
             <div className="stat-icon"><Monitor size={18} /></div>
@@ -184,141 +159,125 @@ export default function RoomManagement() {
           </div>
           <div className="rm-stat-card color-green">
             <div className="stat-icon"><CheckCircle2 size={18} /></div>
-            <div className="stat-val">{rooms.filter(r => r.status === 'active').length}</div>
+            <div className="stat-val">{rooms.filter(r => r.status === 'Active').length}</div>
             <div className="stat-label">Đang hoạt động</div>
-          </div>
-          <div className="rm-stat-card color-red">
-            <div className="stat-icon"><XCircle size={18} /></div>
-            <div className="stat-val">{rooms.reduce((s, r) => s + r.computers.filter(c => c.status === 'broken').length, 0)}</div>
-            <div className="stat-label">Máy hỏng</div>
           </div>
           <div className="rm-stat-card color-amber">
             <div className="stat-icon"><AlertCircle size={18} /></div>
-            <div className="stat-val">{rooms.reduce((s, r) => s + r.computers.filter(c => c.status === 'maintenance').length, 0)}</div>
-            <div className="stat-label">Đang bảo dưỡng</div>
+            <div className="stat-val">{rooms.filter(r => r.status === 'Maintenance').length}</div>
+            <div className="stat-label">Bảo dưỡng</div>
+          </div>
+          <div className="rm-stat-card color-red">
+            <div className="stat-icon"><XCircle size={18} /></div>
+            <div className="stat-val">{rooms.filter(r => r.status === 'Inactive').length}</div>
+            <div className="stat-label">Ngưng hoạt động</div>
           </div>
         </div>
 
-        {/* Toolbar */}
         <div className="rm-toolbar">
           <div className="rm-search">
-            <Search className="search-ic" size={17} />
-            <input type="text" placeholder="Tìm kiếm phòng, mã code, loại phòng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <Search size={16} className="search-ic" />
+            <input type="text" placeholder="Tìm phòng..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
+
           <div className="rm-floor-pills">
             {floors.map(f => (
-              <button key={f} className={`rm-floor-pill${selectedFloor === f ? ' active' : ''}`} onClick={() => setSelectedFloor(f)}>
+              <button key={f} className={`rm-floor-pill ${selectedFloor === f ? 'active' : ''}`} onClick={() => setSelectedFloor(f)}>
                 {f === 0 ? 'Tất cả' : `Tầng ${f}`}
               </button>
             ))}
           </div>
-          <button className="rm-create-btn" onClick={() => setShowCreateForm(true)}>
-            <Plus size={16} /> Tạo phòng mới
-          </button>
+
+          <button className="rm-create-btn" onClick={() => setShowCreateForm(true)}><Plus size={16} />Tạo phòng</button>
         </div>
 
-        {/* Table */}
         <div className="rm-table-wrap">
           <table className="rm-table">
             <thead>
               <tr>
-                <th style={{ textAlign: 'center' }}>Mã code</th>
-                <th style={{ textAlign: 'center' }}>Tên phòng</th>
-                <th style={{ textAlign: 'center' }}>Loại phòng</th>
-                <th style={{ textAlign: 'center' }}>Số máy</th>
-                <th style={{ textAlign: 'center' }}>Tình trạng máy</th>
-                <th style={{ textAlign: 'center' }}>Trạng thái</th>
-                <th style={{ textAlign: 'center', width: 70 }}>Thao tác</th>
+                <th>Mã</th>
+                <th>Tên phòng</th>
+                <th>Loại</th>
+                <th>Số máy</th>
+                <th>Tình trạng máy</th>
+                <th>Trạng thái</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {filteredRooms.length > 0 ? filteredRooms.map(room => {
-                const stats = getComputerStats(room);
-                return (
-                  <tr key={room.id}>
-                    <td><span className="rm-code">{room.code}</span></td>
-                    <td>
-                      <div className="rm-name">{room.name}</div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Tầng {room.floor}</div>
-                    </td>
-                    <td><span className="rm-type-badge" style={{ background: getTypeBadge(room.type) }}>{room.type}</span></td>
-                    <td style={{ textAlign: 'center' }}><strong style={{ color: '#1e293b' }}>{room.totalComputers}</strong></td>
-                    <td style={{ textAlign: 'center' }}>
-                      <div className="rm-status-row" style={{ textAlign: 'center' }}>
-                        <span className="rm-status-chip green"><span className="dot dot-green" />{stats.active}</span>
-                        {stats.broken > 0 && <span className="rm-status-chip red"><span className="dot dot-red" />{stats.broken}</span>}
-                        {stats.maintenance > 0 && <span className="rm-status-chip amber"><span className="dot dot-amber" />{stats.maintenance}</span>}
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`rm-state-badge ${room.status === 'active' ? 'rm-state-active' : 'rm-state-maint'}`}>
-                        {room.status === 'active' ? <><CheckCircle2 size={13} /> Hoạt động</> : <><AlertCircle size={13} /> Bảo dưỡng</>}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <button className="rm-act-btn" title="Xem chi tiết" onClick={() => setSelectedRoom(room)}>
-                        <Eye size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              }) : (
-                <tr><td colSpan={7} className="rm-empty"><Monitor size={40} /><br />Không tìm thấy phòng nào</td></tr>
-              )}
+              {filteredRooms.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="rm-empty">
+                    <Layers size={48} /><br />
+                    Không tìm thấy phòng máy nào
+                  </td>
+                </tr>
+              ) : filteredRooms.map(room => (
+                <tr key={room.roomID}>
+                  <td className="rm-code">{room.roomCode}</td>
+                  <td className="rm-name">{room.roomName}</td>
+                  <td>{room.typeName}</td>
+                  <td>{room.totalComputers}</td>
+                  <td className="rm-status-row">
+                    <span className="rm-status-chip"><span className="dot dot-green"></span> {room.activeComputers}</span>
+                    <span className="rm-status-chip"><span className="dot dot-red"></span> {room.brokenComputers}</span>
+                    <span className="rm-status-chip"><span className="dot dot-amber"></span> {room.maintenanceComputers}</span>
+                  </td>
+                  <td>
+                    {room.status === 'Active' ? <span className="rm-state-badge rm-state-active">Hoạt động</span> : <span className="rm-state-badge rm-state-maint">Bảo dưỡng</span>}
+                  </td>
+                  <td><button onClick={() => setSelectedRoom(room)}><Eye size={16} /></button></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* Create Modal */}
-      {showCreateForm && (
-        <div className="rm-overlay" onClick={() => setShowCreateForm(false)}>
-          <div className="rm-modal" onClick={e => e.stopPropagation()}>
-            <div className="rm-modal-head">
-              <h3>Tạo phòng mới</h3>
-              <button className="rm-modal-close" onClick={() => setShowCreateForm(false)}><X size={16} /></button>
-            </div>
-            <div className="rm-modal-body">
-              <form onSubmit={handleCreateRoom}>
+        {showCreateForm && (
+          <div className="rm-overlay">
+            <form className="rm-modal" onSubmit={handleCreateRoom}>
+              <div className="rm-modal-head">
+                <h3>Tạo phòng mới</h3>
+                <button type="button" onClick={() => setShowCreateForm(false)}><X size={20} /></button>
+              </div>
+              <div className="rm-modal-body">
                 <div className="rm-form-row">
                   <div className="rm-form-group">
-                    <label className="rm-form-label">Loại phòng <span className="req">*</span></label>
-                    <select className="rm-form-input select" name="type" value={formData.type} onChange={handleInputChange} required>
-                      {roomTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="rm-form-group">
-                    <label className="rm-form-label">Mã code <span className="req">*</span></label>
-                    <input type="text" className="rm-form-input" name="code" value={formData.code} onChange={handleInputChange} placeholder="VD: PC-601" required />
+                    <label className="rm-form-label">Mã phòng <span className="req">*</span></label>
+                    <input className="rm-form-input" name="roomCode" value={formData.roomCode} onChange={handleInputChange} required />
                   </div>
                   <div className="rm-form-group">
                     <label className="rm-form-label">Tên phòng <span className="req">*</span></label>
-                    <input type="text" className="rm-form-input" name="name" value={formData.name} onChange={handleInputChange} placeholder="VD: Phòng Lập trình K" required />
+                    <input className="rm-form-input" name="roomName" value={formData.roomName} onChange={handleInputChange} required />
                   </div>
                   <div className="rm-form-group">
-                    <label className="rm-form-label">Số lượng máy <span className="req">*</span></label>
-                    <input type="number" className="rm-form-input" name="totalComputers" value={formData.totalComputers} onChange={handleInputChange} min={1} max={60} required />
-                  </div>
-                  <div className="rm-form-group">
-                    <label className="rm-form-label">Tầng <span className="req">*</span></label>
-                    <select className="rm-form-input select" name="floor" value={formData.floor} onChange={handleInputChange} required>
-                      {[1, 2, 3, 4, 5].map(f => <option key={f} value={f}>Tầng {f}</option>)}
+                    <label className="rm-form-label">Loại phòng</label>
+                    <select className="rm-form-input" name="typeName" value={formData.typeName} onChange={handleInputChange}>
+                      {roomTypes.map(t => <option key={t}>{t}</option>)}
                     </select>
                   </div>
-                  <div className="rm-form-group full" style={{ gridColumn: '1 / -1' }}>
+                  <div className="rm-form-group">
+                    <label className="rm-form-label">Số máy</label>
+                    <input type="number" className="rm-form-input" name="totalComputers" value={formData.totalComputers} onChange={handleInputChange} min={1} />
+                  </div>
+                  <div className="rm-form-group">
+                    <label className="rm-form-label">Tầng</label>
+                    <input type="number" className="rm-form-input" name="floor" value={formData.floor} onChange={handleInputChange} min={1} max={5} />
+                  </div>
+                  <div className="rm-form-group full">
                     <label className="rm-form-label">Mô tả</label>
-                    <textarea className="rm-form-input" name="description" value={formData.description} onChange={handleInputChange} placeholder="Nhập mô tả phòng..." />
+                    <textarea className="rm-form-input" name="description" value={formData.description} onChange={handleInputChange} />
                   </div>
                 </div>
                 <div className="rm-form-actions">
                   <button type="button" className="rm-btn-cancel" onClick={() => setShowCreateForm(false)}>Hủy</button>
-                  <button type="submit" className="rm-btn-submit">Tạo phòng</button>
+                  <button type="submit" className="rm-btn-submit"><Plus size={16} /> Tạo phòng</button>
                 </div>
-              </form>
-            </div>
+              </div>
+            </form>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }

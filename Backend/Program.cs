@@ -22,11 +22,15 @@ builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<InvoiceRepository>();
+builder.Services.AddScoped<IIncidentReportRepository, IncidentReportRepository>();
+builder.Services.AddScoped<IIncidentReportService, IncidentReportService>();
+builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 
 // ===== Configure CORS =====
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy.WithOrigins("*") // Khuyên dùng đúng Port React thay vì "*" để bảo mật hơn
               .AllowAnyHeader()
@@ -105,7 +109,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // ===== Enable CORS =====
-app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 
 // 3. KÍCH HOẠT AUTHENTICATION (BẮT BUỘC ĐẶT TRƯỚC AUTHORIZATION)
 app.UseAuthentication(); // <--- Dòng này kiểm tra "Mày là ai?"

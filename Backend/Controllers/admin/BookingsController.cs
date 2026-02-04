@@ -92,12 +92,12 @@ namespace Backend.Controllers.admin
         /// Đánh dấu phòng đã được sử dụng (chỉ khi status = approved, IsUsed chưa true)
         /// </summary>
         [HttpPatch("{id}/mark-used")]
-        public async Task<IActionResult> MarkBookingAsUsed(int id)
+        public async Task<IActionResult> MarkBookingAsUsed(int id, [FromBody] MarkAsUsedDto dto)
         {
             try
             {
-                var booking = await _bookingService.MarkBookingAsUsedAsync(id);
-                return Ok(new { success = true, message = "Đánh dấu phòng đã được sử dụng", data = booking });
+                var booking = await _bookingService.MarkBookingAsUsedAsync(id, dto.IsUsed);
+                return Ok(new { success = true, message = "Cập nhật trạng thái sử dụng phòng thành công", data = booking });
             }
             catch (Exception ex)
             {
@@ -105,16 +105,22 @@ namespace Backend.Controllers.admin
             }
         }
 
-        /// <summary>
-        /// PATCH /api/bookings/{id}/reject
-        /// Từ chối yêu cầu đặt phòng, body: { "reason": "lý do" }
-        /// </summary>        [HttpPatch("{id}/reject")]
-        //public async Task<IActionResult> RejectBooking(int id, [FromBody] RejectBookingDto rejectDto)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid)
-        //            return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+        [HttpPatch("{id}/reject")]
+        public async Task<IActionResult> RejectBooking(int id, [FromBody] RejectBookingDto rejectDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+                var booking = await _bookingService.RejectBookingAsync(id, rejectDto);
+                return Ok(new { success = true, message = "Từ chối đặt phòng thành công", data = booking });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
 
     }
 }
