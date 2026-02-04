@@ -58,12 +58,10 @@ export const BookingsView = ({
                 // 2. Xử lý dữ liệu ngày giờ từ API
                 // API trả về: bookingDate (string), startTime (ISO string), endTime (ISO string)
                 const dateDisplay = booking.bookingDate || booking.date;
-                const startHour = getHourFromIso(booking.startTime);
-                const endHour = getHourFromIso(booking.endTime);
 
                 // 3. Tính toán lại tổng tiền nếu API không trả về
                 // (Giả sử duration = end - start, nhân với giá phòng)
-                const duration = endHour - startHour;
+                const duration = booking.endHour - booking.startHour;
                 const price = room?.pricePerHour || 0;
                 const estimatedCost = booking.totalCost !== undefined 
                                       ? booking.totalCost 
@@ -94,7 +92,7 @@ export const BookingsView = ({
                                         Ngày: {dateDisplay}
                                     </span>
                                     <span className="font-medium text-gray-700">
-                                        Giờ: {startHour}:00 - {endHour}:00
+                                        Giờ: {booking.startTimeStr} - {booking.endTimeStr}
                                     </span>
                                 </div>
                             </div>

@@ -56,5 +56,48 @@ namespace Backend.Controllers.Client
                 return StatusCode(500, new { message = "Lỗi server khi lấy lịch đặt phòng", error = ex.Message });
             }
         }
+
+        // GET: api/client/Booking/user/5
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetBookingHistoryByUserId(int userId)
+        {
+            try
+            {
+                var history = await _context.RoomBookings
+                    .Include(b => b.Room)
+                    .Where(b => b.UserId == userId)
+                    .OrderByDescending(b => b.BookingDate) // Sắp xếp mới nhất lên đầu
+                    .ThenByDescending(b => b.StartTime)
+                    .Select(b => new
+                    {
+                        id = b.BookingId,
+                        roomId = b.RoomId,
+                        roomName = b.Room.RoomName,
+                        userId = b.UserId,
+
+                        // Format ngày hiển thị
+                        date = b.BookingDate.ToString("yyyy-MM-dd"),
+
+                        // Lấy giờ (số nguyên) để tính toán logic nếu cần
+                        startHour = b.StartTime.HasValue ? b.StartTime.Value.Hour : 0,
+                        endHour = b.EndTime.HasValue ? b.EndTime.Value.Hour : 0,
+
+                        // Lấy chuỗi giờ đẹp để hiển thị (VD: "07:00")
+                        startTimeStr = b.StartTime.HasValue ? b.StartTime.Value.ToString("HH:mm") : "",
+                        endTimeStr = b.EndTime.HasValue ? b.EndTime.Value.ToString("HH:mm") : "",
+
+                        status = b.Status, // Approved, Pending, Rejected...
+                        purpose = b.Purpose,
+                        rejectionReason = b.RejectionReason // Lý do từ chối (nếu có)
+                    })
+                    .ToListAsync();
+
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi server khi lấy lịch sử đặt phòng", error = ex.Message });
+            }
+        }
     }
 }
