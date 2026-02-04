@@ -11,7 +11,7 @@ import RoomManagement from './pages/admin/RoomManagement';
 import BookingManagement from './pages/admin/BookingManagement';
 import InvoiceManagement from './pages/admin/InvoiceManagement';
 import IncidentManagement from './pages/admin/IncidentManagement'
-
+import RoomType from './pages/admin/RoomType'
 
 function App() {
   return (
@@ -33,6 +33,7 @@ function App() {
           <Route path="bookings" element={<BookingManagement />} />
           <Route path="invoices" element={<InvoiceManagement />} />
           <Route path="incidents" element={<IncidentManagement />} />
+          <Route path="roomtype" element={<RoomType />} />
         </Route>
       </Routes>
     </BrowserRouter>
