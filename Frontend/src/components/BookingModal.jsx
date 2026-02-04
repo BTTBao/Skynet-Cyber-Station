@@ -71,10 +71,13 @@ export const BookingModal = ({
 
     // Legacy: Giữ lại cho DateTimeSelector (sẽ cập nhật sau)
     const getBookedSlots = date => {
+        const roomIdToCheck = room.id || room.roomId || room.RoomId;
+
         return existingBookings
             .filter(b => {
                 const bookingDate = b.date || b.bookingDate
-                const roomMatches = (b.roomId === room.id || b.roomId === room.roomId)
+                // CHỈ check conflict với phòng cụ thể đang đặt
+                const roomMatches = (b.roomId == roomIdToCheck)
                 const isActive = b.status !== "REJECTED" && b.status !== "Cancelled" && b.status !== "Rejected"
                 return roomMatches && bookingDate === date && isActive
             })

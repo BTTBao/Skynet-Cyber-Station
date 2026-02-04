@@ -6,7 +6,8 @@ import {
     Monitor,
     CheckCircle,
     Box,
-    ArrowRight
+    ArrowRight,
+    AlertTriangle
 } from "lucide-react"
 
 export const RoomDetailModal = ({
@@ -17,6 +18,33 @@ export const RoomDetailModal = ({
     userRole
 }) => {
     if (!isOpen) return null
+
+    const software = ["Office 365", "VS Code", "NodeJS", "Python", "Docker", "Adobe Photoshop", "Illustrator"]
+    console.log(room);
+
+    // Xử lý specs: Nếu cpu chứa dấu phẩy => tách thành các phần riêng
+    const processedSpecs = (() => {
+        const { cpu, ram, gpu, storage } = room.specs || {};
+
+        // Nếu cpu chứa dấu phẩy, parse lại toàn bộ
+        if (cpu && cpu.includes(',')) {
+            const parts = cpu.split(',').map(p => p.trim());
+            return {
+                cpu: parts[0] || "Đang cập nhật",
+                ram: parts[1] || ram || "Đang cập nhật",
+                storage: parts[2] || storage || "Đang cập nhật",
+                gpu: parts[3] || gpu || "Đang cập nhật"
+            };
+        }
+
+        // Nếu không có dấu phẩy, dùng như cũ
+        return {
+            cpu: cpu || "Đang cập nhật",
+            ram: ram || "Đang cập nhật",
+            gpu: gpu || "Đang cập nhật",
+            storage: storage || "Đang cập nhật"
+        };
+    })();
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
@@ -71,25 +99,25 @@ export const RoomDetailModal = ({
                                 <div className="bg-[#271756]/5 p-3 rounded-lg">
                                     <span className="text-xs text-gray-500 block">CPU</span>
                                     <span className="font-semibold text-[#271756] text-sm">
-                                        {room.specs.cpu}
+                                        {processedSpecs.cpu}
                                     </span>
                                 </div>
                                 <div className="bg-[#271756]/5 p-3 rounded-lg">
                                     <span className="text-xs text-gray-500 block">RAM</span>
                                     <span className="font-semibold text-[#271756] text-sm">
-                                        {room.specs.ram}
-                                    </span>
-                                </div>
-                                <div className="bg-[#271756]/5 p-3 rounded-lg">
-                                    <span className="text-xs text-gray-500 block">GPU</span>
-                                    <span className="font-semibold text-[#271756] text-sm">
-                                        {room.specs.gpu}
+                                        {processedSpecs.ram}
                                     </span>
                                 </div>
                                 <div className="bg-[#271756]/5 p-3 rounded-lg">
                                     <span className="text-xs text-gray-500 block">Lưu trữ</span>
                                     <span className="font-semibold text-[#271756] text-sm">
-                                        {room.specs.storage}
+                                        {processedSpecs.storage}
+                                    </span>
+                                </div>
+                                <div className="bg-[#271756]/5 p-3 rounded-lg">
+                                    <span className="text-xs text-gray-500 block">Màn hình</span>
+                                    <span className="font-semibold text-[#271756] text-sm">
+                                        {processedSpecs.gpu}
                                     </span>
                                 </div>
                             </div>
@@ -102,7 +130,7 @@ export const RoomDetailModal = ({
                                 đặt sẵn
                             </h3>
                             <div className="flex flex-wrap gap-2">
-                                {room.software.map((sw, idx) => (
+                                {software.map((sw, idx) => (
                                     <span
                                         key={idx}
                                         className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-700 shadow-sm"
@@ -131,6 +159,28 @@ export const RoomDetailModal = ({
                                 ))}
                             </ul>
                         </div>
+
+                        {/* Incident Reports Section */}
+                        {room.activeIncidentReports?.length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center">
+                                    <AlertTriangle className="mr-2 text-orange-500" size={18} /> Sự cố
+                                </h3>
+                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <ul className="space-y-2">
+                                        {room.activeIncidentReports.map((report, idx) => (
+                                            <li
+                                                key={idx}
+                                                className="flex items-start text-sm text-orange-800"
+                                            >
+                                                <AlertTriangle size={14} className="mr-2 mt-0.5 flex-shrink-0 text-orange-500" />
+                                                <span>{report}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Footer Action */}

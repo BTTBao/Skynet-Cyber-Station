@@ -63,7 +63,7 @@ export const BookingConfig = {
         OUTSIDE_HOURS: 'Chỉ được đặt trong giờ mở cửa (7:00 - 21:00)',
         CLOSED_DATE: 'Ngày này phòng máy không mở cửa (nghỉ lễ/bảo trì)',
         INVALID_SLOT: 'Thời gian bắt đầu không hợp lệ',
-        INVALID_DURATION: 'Thời lượng không hợp lệ (chọn: 15p, 30p, 45p, 1h, 1.5h, 2h...)',
+        INVALID_DURATION: 'Thời lượng không hợp lệ',
     }
 }
 

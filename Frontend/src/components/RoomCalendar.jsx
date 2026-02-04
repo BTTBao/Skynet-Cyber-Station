@@ -91,6 +91,7 @@ export const RoomCalendar = ({
                         getBookingsForDate={getBookingsForDate}
                         rooms={rooms}
                         onSlotClick={handleSlotClick}
+                        selectedRoomId={selectedRoomId}
                     />
                 )}
             </div>

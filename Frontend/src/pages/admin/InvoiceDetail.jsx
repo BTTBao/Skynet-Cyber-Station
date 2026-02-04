@@ -1,6 +1,5 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function InvoiceDetail({ invoice, onBack, onUpdate }) {
   if (!invoice) return null;

@@ -54,16 +54,16 @@ const UserProfile = ({ userId }) => {
 
     // Nếu không có token -> đá về trang login ngay
     if (!token) {
-        navigate('/login');
-        return;
+      navigate('/login');
+      return;
     }
 
     fetch(`${API_BASE_URL}/Users/${userId}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Gửi kèm Token
-        }
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // Gửi kèm Token
+      }
     })
       .then(response => {
         if (response.status === 401) throw new Error('Hết phiên đăng nhập. Vui lòng đăng nhập lại.');
@@ -80,7 +80,7 @@ const UserProfile = ({ userId }) => {
         setLoading(false);
         // Nếu lỗi 401 Unauthorized -> Đá về Login
         if (err.message.includes("Hết phiên") || err.message.includes("401")) {
-            navigate('/login');
+          navigate('/login');
         }
       });
   }, [userId, navigate]);
@@ -100,9 +100,9 @@ const UserProfile = ({ userId }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/Users/${user.userId}`, {
         method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Gửi kèm Token
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Gửi kèm Token
         },
         body: JSON.stringify(updateData)
       });
@@ -139,12 +139,12 @@ const UserProfile = ({ userId }) => {
 
     try {
       const token = localStorage.getItem("authToken"); // Lấy token
-      
+
       const response = await fetch(`${API_BASE_URL}/Users/change-password`, {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Gửi kèm Token
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Gửi kèm Token
         },
         body: JSON.stringify(payload)
       });
@@ -184,12 +184,37 @@ const UserProfile = ({ userId }) => {
     let className = 'badge ';
     const s = status?.toLowerCase() || '';
 
-    if (['approved', 'paid', 'Approved', 'active'].includes(s)) className += 'status-success';
-    else if (['pending', 'unpaid', 'not yet paid'].includes(s)) className += 'status-pending';
-    else if (['rejected', 'cancelled'].includes(s)) className += 'status-rejected';
-    else className += 'status-processing';
+    // 1. Định nghĩa từ điển chuyển đổi Tiếng Việt
+    const statusMap = {
+      'approved': 'Đã duyệt',
+      'paid': 'Đã thanh toán',
+      'active': 'Đang hoạt động',
+      'pending': 'Chờ duyệt',
+      'unpaid': 'Chưa thanh toán',
+      'not yet paid': 'Chưa thanh toán',
+      'rejected': 'Đã từ chối',
+      'cancelled': 'Đã hủy',
+      'complete': 'Hoàn thành',
+      'processing': 'Đang xử lý'
+    };
 
-    return <span className={className}>{status}</span>;
+    // 2. Xác định Class Name dựa trên giá trị gốc (lowercase)
+    if (['approved', 'paid', 'active', 'complete'].includes(s)) {
+      className += 'status-success';
+    } else if (['pending', 'unpaid', 'not yet paid'].includes(s)) {
+      className += 'status-pending';
+    } else if (['rejected', 'cancelled'].includes(s)) {
+      className += 'status-rejected';
+    } else {
+      className += 'status-processing';
+    }
+
+    // 3. Trả về giao diện với text tiếng Việt, nếu không có trong map thì giữ nguyên status
+    return (
+      <span className={className}>
+        {statusMap[s] || status}
+      </span>
+    );
   };
 
   if (loading) return <div className="profile-wrapper"><h3>Đang tải dữ liệu...</h3></div>;
@@ -280,23 +305,23 @@ const UserProfile = ({ userId }) => {
                         <td>{formatDate(inv.paymentDate)}</td> {/* Dùng hàm format */}
                         <td style={{ fontWeight: 'bold' }}>{inv.totalAmount.toLocaleString('vi-VN')} đ</td>
                         <td>{renderStatusBadge(inv.status)}</td>
-                        
+
                         <td style={{ textAlign: 'center' }}>
                           {inv.status === 'Paid' ? (
-                            <button 
-                                className="btn-action btn-detail"
-                                onClick={() => handleViewDetail(inv.invoiceId)}
-                                title="Xem chi tiết hóa đơn"
+                            <button
+                              className="btn-action btn-detail"
+                              onClick={() => handleViewDetail(inv.invoiceId)}
+                              title="Xem chi tiết hóa đơn"
                             >
-                                {Icons.Eye} Chi tiết
+                              {Icons.Eye} Chi tiết
                             </button>
                           ) : (
-                            <button 
-                                className="btn-action btn-pay"
-                                onClick={() => handlePayment(inv.invoiceId)}
-                                title="Thanh toán ngay"
+                            <button
+                              className="btn-action btn-pay"
+                              onClick={() => handlePayment(inv.invoiceId)}
+                              title="Thanh toán ngay"
                             >
-                                {Icons.Card} Thanh toán
+                              {Icons.Card} Thanh toán
                             </button>
                           )}
                         </td>
@@ -349,68 +374,68 @@ const UserProfile = ({ userId }) => {
 
       case 'changepassword':
         return (
-            <>
+          <>
             <div className="card-header">
-                <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
+              <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
             </div>
             <div className="card-body">
-                <form onSubmit={handleChangePassword}>
+              <form onSubmit={handleChangePassword}>
                 <div className="form-grid">
-                    <div className="form-group full-width">
-                        <label className="label">Mật khẩu hiện tại</label>
-                        <div className="input-wrapper">
-                            <span className="input-icon">{Icons.Lock}</span>
-                            <input 
-                                type="password" 
-                                name="currentPassword" 
-                                className="input-field" 
-                                placeholder="Nhập mật khẩu cũ"
-                                value={passwordData.currentPassword} 
-                                onChange={handlePasswordInput} 
-                                required
-                            />
-                        </div>
+                  <div className="form-group full-width">
+                    <label className="label">Mật khẩu hiện tại</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        className="input-field"
+                        placeholder="Nhập mật khẩu cũ"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
                     </div>
+                  </div>
 
-                    <div className="form-group">
-                        <label className="label">Mật khẩu mới</label>
-                        <div className="input-wrapper">
-                            <span className="input-icon">{Icons.Lock}</span>
-                            <input 
-                                type="password" 
-                                name="newPassword" 
-                                className="input-field" 
-                                placeholder="Nhập mật khẩu mới"
-                                value={passwordData.newPassword} 
-                                onChange={handlePasswordInput} 
-                                required
-                            />
-                        </div>
+                  <div className="form-group">
+                    <label className="label">Mật khẩu mới</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        className="input-field"
+                        placeholder="Nhập mật khẩu mới"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
                     </div>
+                  </div>
 
-                    <div className="form-group">
-                        <label className="label">Xác nhận mật khẩu mới</label>
-                        <div className="input-wrapper">
-                            <span className="input-icon">{Icons.Lock}</span>
-                            <input 
-                                type="password" 
-                                name="confirmPassword" 
-                                className="input-field" 
-                                placeholder="Nhập lại mật khẩu mới"
-                                value={passwordData.confirmPassword} 
-                                onChange={handlePasswordInput} 
-                                required
-                            />
-                        </div>
+                  <div className="form-group">
+                    <label className="label">Xác nhận mật khẩu mới</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">{Icons.Lock}</span>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        className="input-field"
+                        placeholder="Nhập lại mật khẩu mới"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordInput}
+                        required
+                      />
                     </div>
+                  </div>
                 </div>
-                
+
                 <button type="submit" className="btn-save">
-                    {Icons.Save} Xác nhận đổi
+                  {Icons.Save} Xác nhận đổi
                 </button>
-                </form>
+              </form>
             </div>
-            </>
+          </>
         );
 
       case 'info':

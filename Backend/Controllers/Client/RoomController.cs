@@ -39,7 +39,12 @@ namespace Backend.Controllers.Client
                         ? r.Computers.FirstOrDefault().Specifications
                         : "Chưa có máy tính",
 
-                    PricePerHour = r.RoomType.BasePrice
+                    PricePerHour = r.RoomType.BasePrice,
+                    ActiveIncidentReports = r.IncidentReports
+                        .Where(ir => ir.Status != "resolved")    // Lọc trạng thái
+                        .OrderByDescending(ir => ir.ReportDate)  // Mới nhất lên đầu
+                        .Select(ir => ir.Description)            // Chỉ chọn cột Description
+                        .ToList()
                 })
                 .ToListAsync();
 
@@ -76,7 +81,13 @@ namespace Backend.Controllers.Client
                         ComputerName = c.ComputerName,
                         Specifications = c.Specifications,
                         Status = c.Status
-                    }).ToList()
+                    }).ToList(),
+
+                    ActiveIncidentReports = r.IncidentReports
+                        .Where(ir => ir.Status != "resolved")    // Lọc trạng thái
+                        .OrderByDescending(ir => ir.ReportDate)  // Mới nhất lên đầu
+                        .Select(ir => ir.Description)            // Chỉ chọn cột Description
+                        .ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -99,6 +110,7 @@ namespace Backend.Controllers.Client
         // Thông số kĩ thuật đại diện của 1 máy trong phòng
         public decimal? PricePerHour { get; set; }
         public string? RepresentativeComputerSpecs { get; set; }
+        public List<string> ActiveIncidentReports { get; set; }
     }
 
     // DTO cho chi tiết phòng (đầy đủ thông tin)
@@ -118,6 +130,8 @@ namespace Backend.Controllers.Client
 
         // Danh sách máy tính trong phòng (nếu cần hiển thị chi tiết)
         public List<ComputerDto> Computers { get; set; }
+
+        public List<string> ActiveIncidentReports { get; set; }
     }
 
     public class ComputerDto

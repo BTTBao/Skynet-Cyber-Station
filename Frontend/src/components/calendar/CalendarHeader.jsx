@@ -50,13 +50,25 @@ export const CalendarHeader = ({
                             key={mode}
                             onClick={() => setViewMode(mode)}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all capitalize ${viewMode === mode
-                                    ? 'bg-[#271756] text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-200'
+                                ? 'bg-[#271756] text-white shadow-md'
+                                : 'text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {mode === 'month' ? 'Tháng' : mode === 'week' ? 'Tuần' : 'Ngày'}
                         </button>
                     ))}
+                </div>
+            </div>
+
+            {/* Legend - Ghi chú màu sắc */}
+            <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 bg-[#271756] border-l-2 border-[#facb01] rounded-sm"></div>
+                    <span className="text-gray-600">Đã xác nhận</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 bg-orange-400 border-l-2 border-orange-600 rounded-sm"></div>
+                    <span className="text-gray-600">Chờ duyệt</span>
                 </div>
             </div>
         </div>

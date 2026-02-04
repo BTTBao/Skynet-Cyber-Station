@@ -23,16 +23,25 @@ namespace Backend.Controllers.Client
             try
             {
                 var reports = await _context.IncidentReports
+                    .Include(r => r.Room) // Đảm bảo join bảng Room (tùy chọn nếu dùng Select)
                     .Where(r => r.UserId == userId)
                     .Select(r => new
                     {
                         id = r.ReportId,
                         userId = r.UserId,
-                        // title = r.Title,
+                        roomId = r.RoomId,
+
+                        // --- THÊM DÒNG NÀY ---
+                        roomName = r.Room.RoomName,
+                        // ---------------------
+
                         description = r.Description,
                         status = r.Status,
-                        timestamp = DateTime.Now
+
+                        // FIX: Lấy ngày báo cáo thực tế thay vì DateTime.Now
+                        timestamp = r.ReportDate
                     })
+                    .OrderByDescending(r => r.timestamp) // Sắp xếp mới nhất lên đầu
                     .ToListAsync();
 
                 return Ok(reports);
@@ -49,13 +58,10 @@ namespace Backend.Controllers.Client
         {
             try
             {
-                // Logic ghép chuỗi Title theo yêu cầu
-                string autoTitle = $"Báo cáo sự cố phòng {request.RoomId}";
-
                 var newReport = new IncidentReport
                 {
                     UserId = request.UserId,
-                    // Title = autoTitle,
+                    RoomId = request.RoomId,
                     Description = request.Description,
                     Status = "not yet processed"
                 };
