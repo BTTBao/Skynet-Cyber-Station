@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import './UserProfile.css';
 
 // --- Cấu hình API URL ---
@@ -14,17 +15,19 @@ const Icons = {
   Invoice: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 2.072c.675-.25 1.25.07 1.5.317" /></svg>,
   Report: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
   Save: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  // --- MỚI: Icon Ổ khóa ---
-  Lock: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+  Lock: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>,
+  // --- MỚI: Thêm icon View (Chi tiết) và Card (Thanh toán) ---
+  Eye: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Card: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
 };
 
 const UserProfile = ({ userId }) => {
+  const navigate = useNavigate(); // 2. Hook chuyển hướng trang
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
-  // --- MỚI: State cho đổi mật khẩu ---
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -37,9 +40,7 @@ const UserProfile = ({ userId }) => {
 
     fetch(`${API_BASE_URL}/Users/${userId}`)
       .then(response => {
-        if (!response.ok) {
-          throw new Error('Không thể tải dữ liệu người dùng.');
-        }
+        if (!response.ok) throw new Error('Không thể tải dữ liệu người dùng.');
         return response.json();
       })
       .then(data => {
@@ -56,7 +57,6 @@ const UserProfile = ({ userId }) => {
   // --- 2. Xử lý Update Info ---
   const handleSave = async (e) => {
     e.preventDefault();
-
     const updateData = {
       fullName: user.fullName,
       email: user.email,
@@ -66,9 +66,7 @@ const UserProfile = ({ userId }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/Users/${user.userId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
       });
 
@@ -83,7 +81,7 @@ const UserProfile = ({ userId }) => {
     }
   };
 
-  // --- MỚI: 3. Xử lý đổi mật khẩu ---
+  // --- 3. Xử lý Đổi mật khẩu ---
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -96,8 +94,6 @@ const UserProfile = ({ userId }) => {
       return;
     }
 
-    // Payload gửi đi (Bạn cần kiểm tra Backend nhận model gì)
-    // Giả định backend cần: { userId, currentPassword, newPassword }
     const payload = {
       userId: user.userId,
       currentPassword: passwordData.currentPassword,
@@ -105,18 +101,14 @@ const UserProfile = ({ userId }) => {
     };
 
     try {
-      // Giả định đường dẫn API đổi mật khẩu
       const response = await fetch(`${API_BASE_URL}/Users/change-password`, {
-        method: 'POST', // Thường là POST hoặc PUT
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
         alert("✅ Đổi mật khẩu thành công!");
-        // Reset form
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         const errData = await response.json().catch(() => ({}));
@@ -125,6 +117,17 @@ const UserProfile = ({ userId }) => {
     } catch (error) {
       alert("❌ Lỗi kết nối đến server.");
     }
+  };
+
+  // --- 4. NAVIGATION HANDLERS (LOGIC MỚI) ---
+  const handlePayment = (invoiceId) => {
+    // Chuyển hướng sang trang Checkout để thanh toán
+    navigate(`/checkout/${invoiceId}`);
+  };
+
+  const handleViewDetail = (invoiceId) => {
+    // Chuyển hướng sang trang Checkout để xem lại hóa đơn
+    navigate(`/checkout/${invoiceId}`);
   };
 
   const handleChange = (e) => {
@@ -149,7 +152,6 @@ const UserProfile = ({ userId }) => {
     return <span className={className}>{status}</span>;
   };
 
-  // --- Loading & Error States ---
   if (loading) return <div className="profile-wrapper"><h3>Đang tải dữ liệu...</h3></div>;
   if (error) return <div className="profile-wrapper"><h3 style={{ color: 'red' }}>Lỗi: {error}</h3></div>;
   if (!user) return null;
@@ -223,11 +225,12 @@ const UserProfile = ({ userId }) => {
                     <th>Ngày thanh toán</th>
                     <th>Số tiền</th>
                     <th>Trạng thái</th>
+                    <th style={{ textAlign: 'center' }}>Hành động</th> {/* Cột Mới */}
                   </tr>
                 </thead>
                 <tbody>
                   {user.invoices.length === 0 ? (
-                    <tr><td colSpan="5" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
+                    <tr><td colSpan="6" style={{ textAlign: 'center' }}>Chưa có dữ liệu</td></tr>
                   ) : (
                     user.invoices.map(inv => (
                       <tr key={inv.invoiceId}>
@@ -236,6 +239,28 @@ const UserProfile = ({ userId }) => {
                         <td>{inv.paymentDate || '-'}</td>
                         <td style={{ fontWeight: 'bold' }}>{inv.totalAmount.toLocaleString('vi-VN')} đ</td>
                         <td>{renderStatusBadge(inv.status)}</td>
+                        
+                        {/* --- NÚT BẤM ĐIỀU HƯỚNG --- */}
+                        <td style={{ textAlign: 'center' }}>
+                          {inv.status === 'Paid' ? (
+                            <button 
+                                className="btn-action btn-detail"
+                                onClick={() => handleViewDetail(inv.invoiceId)}
+                                title="Xem chi tiết hóa đơn"
+                            >
+                                {Icons.Eye} Chi tiết
+                            </button>
+                          ) : (
+                            <button 
+                                className="btn-action btn-pay"
+                                onClick={() => handlePayment(inv.invoiceId)}
+                                title="Thanh toán ngay"
+                            >
+                                {Icons.Card} Thanh toán
+                            </button>
+                          )}
+                        </td>
+
                       </tr>
                     ))
                   )}
@@ -282,7 +307,6 @@ const UserProfile = ({ userId }) => {
           </>
         );
 
-      // --- MỚI: Case cho Đổi mật khẩu ---
       case 'changepassword':
         return (
             <>
@@ -347,73 +371,6 @@ const UserProfile = ({ userId }) => {
                 </form>
             </div>
             </>
-        );
-
-      // --- MỚI: Case cho Đổi mật khẩu ---
-      case 'changepassword':
-        return (
-          <>
-            <div className="card-header">
-              <h3 className="header-title">{Icons.Lock} Đổi mật khẩu</h3>
-            </div>
-            <div className="card-body">
-              <form onSubmit={handleChangePassword}>
-                <div className="form-grid">
-                  <div className="form-group full-width">
-                    <label className="label">Mật khẩu hiện tại</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon">{Icons.Lock}</span>
-                      <input
-                        type="password"
-                        name="currentPassword"
-                        className="input-field"
-                        placeholder="Nhập mật khẩu cũ"
-                        value={passwordData.currentPassword}
-                        onChange={handlePasswordInput}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="label">Mật khẩu mới</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon">{Icons.Lock}</span>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        className="input-field"
-                        placeholder="Nhập mật khẩu mới"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordInput}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="label">Xác nhận mật khẩu mới</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon">{Icons.Lock}</span>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        className="input-field"
-                        placeholder="Nhập lại mật khẩu mới"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordInput}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button type="submit" className="btn-save">
-                  {Icons.Save} Xác nhận đổi
-                </button>
-              </form>
-            </div>
-          </>
         );
 
       case 'info':
@@ -524,7 +481,6 @@ const UserProfile = ({ userId }) => {
               <div className={`menu-item ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
                 {Icons.Report} Báo cáo sự cố
               </div>
-              {/* --- MỚI: Menu item Đổi mật khẩu --- */}
               <div className={`menu-item ${activeTab === 'changepassword' ? 'active' : ''}`} onClick={() => setActiveTab('changepassword')}>
                 {Icons.Lock} Đổi mật khẩu
               </div>

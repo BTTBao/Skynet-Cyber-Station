@@ -359,7 +359,54 @@ body {
   background-color: #dbeafe;
   color: #2563eb;
 }
+/* --- Nút hành động trong bảng Invoice --- */
+.btn-action {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* Tránh xuống dòng */
+}
 
+.btn-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-action:active {
+  transform: scale(0.95);
+}
+
+/* Nút Thanh Toán (Màu tím/Gradient nổi bật) */
+.btn-pay {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 3px 6px rgba(118, 75, 162, 0.3);
+}
+
+.btn-pay:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #633e8a 100%);
+  box-shadow: 0 4px 10px rgba(118, 75, 162, 0.5);
+}
+
+/* Nút Chi tiết (Màu xám nhẹ nhàng) */
+.btn-detail {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-detail:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+  border-color: #d1d5db;
+}
 /* Responsive */
 @media (max-width: 900px) {
   .profile-container {
