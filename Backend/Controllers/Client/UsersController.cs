@@ -117,7 +117,7 @@ namespace Backend.Controllers.Client
                 return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
             }
 
-            if (user.Status == "Banned" || user.Status == "Inactive")
+            if (user.Status == "Banned" || user.Status == "Locked")
             {
                 return BadRequest(new { message = "Tài khoản của bạn đã bị khóa." });
             }
