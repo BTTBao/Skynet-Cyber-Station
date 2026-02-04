@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Backend.DTOs; // <--- Nhớ import DTO
 using Backend.Models;
-using Backend.DTOs; // <--- Nhớ import DTO
+using Backend.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Backend.Controllers
@@ -13,10 +14,12 @@ namespace Backend.Controllers
     public class InvoicesController : ControllerBase
     {
         private readonly QuanLyPhongMayContext _context;
+        private readonly IEmailService _emailService;
 
-        public InvoicesController(QuanLyPhongMayContext context)
+        public InvoicesController(QuanLyPhongMayContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // GET: api/Invoices/5
@@ -91,30 +94,64 @@ namespace Backend.Controllers
         [HttpPost("{id}/pay")]
         public async Task<IActionResult> PayInvoice(int id)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("UserId")?.Value;
-            int currentUserId = int.Parse(userIdClaim ?? "0");
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            // Lấy hóa đơn kèm thông tin User và Phòng để gửi mail
+            var invoice = await _context.Invoices
+                .Include(i => i.User)
+                .Include(i => i.Booking).ThenInclude(b => b.Room)
+                .FirstOrDefaultAsync(i => i.InvoiceId == id);
 
-            var invoice = await _context.Invoices.FindAsync(id);
-            if (invoice == null) return NotFound();
+            if (invoice == null) return NotFound(new { message = "Không tìm thấy hóa đơn" });
+            if (invoice.Status == "Paid") return BadRequest(new { message = "Đã thanh toán rồi" });
 
-            // Check quyền
-            if (invoice.UserId != currentUserId && userRole != "Admin")
-            {
-                return StatusCode(403, new { message = "Bạn không được phép thanh toán hóa đơn này." });
-            }
-
-            if (invoice.Status == "Paid" || invoice.Status == "Deposit Paid")
-                return BadRequest(new { message = "Hóa đơn này đã được thanh toán rồi." });
-
-            // Cập nhật trạng thái
-            // Đổi thành "Paid" để UserProfile hiển thị màu xanh (hoặc bạn có thể dùng "Deposit Paid" nếu muốn rõ ràng)
+            // Xử lý thanh toán
             invoice.Status = "Paid";
             invoice.PaymentDate = DateTime.Now;
-
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Thanh toán cọc thành công!", paymentDate = invoice.PaymentDate });
+            // --- CODE GỬI MAIL (Thêm đoạn này vào) ---
+            try
+            {
+                string userEmail = invoice.User.Email;
+                string subject = $"[Xác nhận] Đã nhận tiền cọc - Hóa đơn #{invoice.InvoiceId}";
+
+                // Format tiền tệ Việt Nam
+                string depositMoney = invoice.Deposit?.ToString("N0") + " VNĐ";
+                string totalMoney = invoice.TotalAmount.ToString("N0") + " VNĐ";
+
+                string body = $@"
+                <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+                    <h2 style='color: #271756;'>Thanh toán cọc thành công!</h2>
+                    <p>Xin chào <b>{invoice.User.FullName}</b>,</p>
+                    <p>Hệ thống đã nhận được khoản thanh toán cọc của bạn.</p>
+                    
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                        <tr style='background: #f3f4f6;'>
+                            <td style='padding: 10px; border: 1px solid #ddd;'><b>Phòng:</b></td>
+                            <td style='padding: 10px; border: 1px solid #ddd;'>{invoice.Booking?.Room?.RoomName}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 10px; border: 1px solid #ddd;'><b>Số tiền cọc:</b></td>
+                            <td style='padding: 10px; border: 1px solid #ddd; color: #d32f2f; font-weight: bold;'>{depositMoney}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 10px; border: 1px solid #ddd;'><b>Thời gian:</b></td>
+                            <td style='padding: 10px; border: 1px solid #ddd;'>{DateTime.Now:dd/MM/yyyy HH:mm}</td>
+                        </tr>
+                    </table>
+
+                    <p>Vui lòng đến nhận phòng đúng giờ. Cảm ơn bạn đã sử dụng dịch vụ!</p>
+                </div>";
+
+                // Gửi mail (Không await để API phản hồi nhanh hơn cho React)
+                _emailService.SendEmailAsync(userEmail, subject, body);
+            }
+            catch (Exception)
+            {
+                // Lỗi gửi mail không được làm ảnh hưởng việc thanh toán thành công
+            }
+            // ------------------------------------------
+
+            return Ok(new { message = "Thanh toán thành công", paymentDate = invoice.PaymentDate });
         }
     }
 }
