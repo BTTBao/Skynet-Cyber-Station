@@ -64,11 +64,9 @@ export const BookingsView = ({
 
                 // 3. Tính toán lại tổng tiền nếu API không trả về
                 // (Giả sử duration = end - start, nhân với giá phòng)
-                const duration = booking.endHour - booking.startHour;
-                const price = room?.pricePerHour || 0;
-                const estimatedCost = booking.basePrice !== undefined
-                    ? booking.basePrice
-                    : (duration * price);
+                const duration = booking.duration || 0;
+                const price = booking?.basePrice || 0;
+                const estimatedCost = (duration * price);
 
                 // 4. Xử lý Status (Backend trả về PascalCase: "Pending", "Booked", "Rejected", "InUse", "Completed")
                 const status = booking.status ? booking.status.toUpperCase() : "PENDING";
@@ -86,6 +84,8 @@ export const BookingsView = ({
                             }
                         case "REJECTED":
                             return { bg: "bg-red-100", text: "text-red-700", label: "Từ chối" }
+                        case "COMPLETE":
+                            return { bg: "bg-green-100", text: "text-green-700", label: "Hoàn thành" }
                         default:
                             return { bg: "bg-gray-100", text: "text-gray-700", label: status }
                     }
@@ -163,18 +163,18 @@ export const BookingsView = ({
                             </div>
 
                             {/* Nút Check-in QR khi status là Booked */}
-                            {status === "APPROVED" && (
+                            {(status === "APPROVED" && booking.isUsed == false) && (
                                 <button
                                     onClick={handleShowQR}
                                     className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#271756] text-white rounded-lg hover:bg-[#271756]/90 transition-all hover:shadow-md text-sm font-semibold w-full md:w-auto"
                                 >
                                     <QrCode size={18} />
-                                    Check-in QR
+                                    Check-in
                                 </button>
                             )}
 
                             {/* Nút báo cáo chỉ hiện khi có thông tin phòng và đang sử dụng */}
-                            {room && (booking.isUsed == true) && (
+                            {room && (status === "APPROVED" && booking.isUsed == true) && (
                                 <button
                                     onClick={() => onReportIssue(room)}
                                     className="flex items-center justify-center gap-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors w-full md:w-auto font-medium"
@@ -203,7 +203,7 @@ export const BookingsView = ({
                         <div className="text-center space-y-4 sm:space-y-6">
                             <div className="pt-2">
                                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
-                                    Check-in QR Code
+                                    Check-in
                                 </h3>
                                 <p className="text-gray-600 text-xs sm:text-sm px-2">
                                     Đưa mã QR này cho admin để quét và check-in

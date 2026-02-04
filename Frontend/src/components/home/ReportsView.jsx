@@ -39,8 +39,8 @@ export const ReportsView = ({ reports, rooms = [] }) => {
             ) : (
                 reports.map(report => {
                     // Nếu backend đã trả về roomName thì dùng luôn, không thì tìm trong mảng rooms
-                    const roomName = report.title || rooms.find(r => r.id === report.roomId)?.name || `Phòng ${report.roomId}`;
-
+                    const roomName = report.roomName || `Phòng ${report.roomId}`;
+                    
                     const statusInfo = getStatusDisplay(report.status);
                     return (
                         <div

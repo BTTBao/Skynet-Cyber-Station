@@ -22,12 +22,14 @@ namespace Backend.Controllers.Client
         {
             try
             {
-                // Lấy các booking không bị từ chối (REJECTED) hoặc đã hủy (CANCELLED)
-                // Tùy vào logic Enum của bạn, hãy điều chỉnh điều kiện Where
+                // BƯỚC 1: Cập nhật trạng thái các đơn hết hạn trước
+                await CheckAndUpdateExpiredBookings();
+
+                // BƯỚC 2: Lấy dữ liệu mới nhất
                 var bookings = await _context.RoomBookings
                     .Include(b => b.User)  // Join bảng User để lấy tên
                     .Include(b => b.Room)  // Join bảng Room để lấy tên phòng
-                    .Where(b => b.Status == "Approved" || b.IsUsed == true)
+                    .Where(b => b.Status == "Pending"  || b.Status == "Approved" || b.IsUsed == true)
                     .Select(b => new
                     {
                         id = b.BookingId,
@@ -63,6 +65,10 @@ namespace Backend.Controllers.Client
         {
             try
             {
+                // BƯỚC 1: Cập nhật trạng thái trước khi hiển thị lịch sử
+                await CheckAndUpdateExpiredBookings();
+
+                // BƯỚC 2: Truy vấn dữ liệu
                 var history = await _context.RoomBookings
                     .Include(b => b.Room)
                         .ThenInclude(r => r.RoomType)
@@ -77,6 +83,9 @@ namespace Backend.Controllers.Client
                         roomId = b.RoomId,
                         roomName = b.Room.RoomName,
                         basePrice = (b.User.Role.RoleName == "Giảng viên") ? 0 : b.Room.RoomType.BasePrice,
+                        duration = (b.StartTime.HasValue && b.EndTime.HasValue)
+                                     ? (b.EndTime.Value - b.StartTime.Value).TotalHours
+                                     : 0,
                         userId = b.UserId,
                         isUsed = b.IsUsed,
 
@@ -153,6 +162,34 @@ namespace Backend.Controllers.Client
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi khi kiểm tra conflict", error = ex.Message });
+            }
+        }
+
+        // ==========================================
+        // HELPER METHOD: XỬ LÝ HẾT GIỜ 
+        // ==========================================
+        private async Task CheckAndUpdateExpiredBookings()
+        {
+            var now = DateTime.Now;
+
+            // Tìm các booking đã qua giờ EndTime nhưng chưa được đánh dấu hoàn thành
+            var expiredBookings = await _context.RoomBookings
+                .Where(b => b.EndTime < now
+                            && b.Status != "Complete"
+                            && b.Status != "Cancelled"
+                            && b.Status != "Rejected")
+                .ToListAsync();
+
+            if (expiredBookings.Any())
+            {
+                foreach (var booking in expiredBookings)
+                {
+                    // Logic theo yêu cầu: Hết giờ -> IsUsed = false, Status = Complete
+                    booking.IsUsed = false;
+                    booking.Status = "Complete";
+                }
+                // Lưu thay đổi xuống DB
+                await _context.SaveChangesAsync();
             }
         }
     }

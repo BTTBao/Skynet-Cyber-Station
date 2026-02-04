@@ -70,6 +70,7 @@ namespace Backend.Controllers.Client
                 RoomId = dto.RoomId,
                 BookingDate = bookingDateOnly,
                 Purpose = dto.Purpose,
+                NumberOfPeople = room.Capacity,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 Status = "Pending",

@@ -102,8 +102,15 @@ const Home = () => {
         setCalendarSelectedRoomId("all")
     }
 
-    const handleViewRoomDetail = room => {
-        setViewingRoomDetail(room)
+    const handleViewRoomDetail = async (room) => {
+        try {
+            // Gọi API getRoomDetail để lấy thông tin đầy đủ bao gồm activeIncidentReports
+            const detailedRoom = await RoomService.getRoomDetail(room.id);
+            setViewingRoomDetail(detailedRoom);
+        } catch (error) {
+            console.error('Lỗi khi tải chi tiết phòng:', error);
+            setViewingRoomDetail(room);
+        }
     }
 
     const handleProceedToCalendar = room => {

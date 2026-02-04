@@ -61,7 +61,6 @@ export const RoomService = {
                 throw new Error('Không thể lấy thông tin phòng');
             }
             const data = await response.json();
-
             // Transform data từ backend sang format frontend
             return {
                 id: data.roomId,
@@ -88,7 +87,8 @@ export const RoomService = {
                 roomCode: data.roomCode,
                 description: data.description,
                 roomTypeName: data.roomTypeName,
-                computers: data.computers || []
+                computers: data.computers || [],
+                activeIncidentReports: data.activeIncidentReports || data.ActiveIncidentReports || []
             };
         } catch (error) {
             console.error('Error fetching room detail:', error);
