@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   User, Lock, Mail, Phone, Loader2, 
-  AlertCircle, CheckCircle, ArrowRight, LogIn, Home 
+  AlertCircle, CheckCircle, ArrowRight, LogIn, Home, Shield 
 } from "lucide-react";
 
 const AuthPage = () => {
@@ -61,12 +61,26 @@ const AuthPage = () => {
         }
 
         const data = await response.json();
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("currentUser", JSON.stringify(data.user));
+        
+        // ✅ KIỂM TRA ROLE ADMIN
+        const userRole = data.user?.role || data.role || "";
+        const isAdmin = userRole.toLowerCase() === "admin";
 
-        alert("✅ Đăng nhập thành công!");
-        navigate("/"); 
+        // Lưu thông tin đăng nhập
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+        localStorage.setItem("currentUser", JSON.stringify(data.user || data));
+        localStorage.setItem("isAdmin", isAdmin.toString());
 
+        // Hiển thị thông báo thành công
+        if (isAdmin) {
+          alert("✅ Đăng nhập thành công với quyền Admin!");
+          navigate("/admin");
+        } else {
+          alert("✅ Đăng nhập thành công!");
+          navigate("/");
+        }
       } else {
         // === ĐĂNG KÝ ===
         if (formData.password !== formData.confirmPassword) {
@@ -116,7 +130,7 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-10 relative">
       
-      {/* --- NÚT VỀ TRANG CHỦ (MỚI) --- */}
+      {/* --- NÚT VỀ TRANG CHỦ --- */}
       <button 
         onClick={() => navigate("/")}
         className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-all transform hover:-translate-x-1"
