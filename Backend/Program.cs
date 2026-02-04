@@ -1,12 +1,12 @@
 using Backend.Models;
 using Backend.Repository.admin;
 using Backend.Service;
-using Microsoft.EntityFrameworkCore;
 // 1. THÊM CÁC THƯ VIỆN NÀY
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models; // Dùng để cấu hình Swagger có nút Login
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +26,10 @@ builder.Services.AddScoped<IIncidentReportRepository, IncidentReportRepository>(
 builder.Services.AddScoped<IIncidentReportService, IncidentReportService>();
 builder.Services.AddScoped<IRoomRepository, RoomRepository>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<RTRepository>();
+builder.Services.AddScoped<RTService>();
+builder.Services.AddScoped<ComputerRepository>();
+builder.Services.AddScoped<ComputerService>();
 
 // ===== Configure CORS =====
 builder.Services.AddCors(options =>

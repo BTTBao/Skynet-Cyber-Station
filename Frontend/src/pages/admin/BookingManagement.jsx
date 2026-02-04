@@ -676,7 +676,7 @@ export default function BookingManagement() {
 
                       <button
                         className="bk-used-btn confirm mt-2"
-                        onClick={() => markAsUsed(viewItem.id)}
+                        onClick={() => markAsUsed(viewItem.id, true)}
                       >
                         <CheckCircle2 size={15} /> Mark as done
                       </button>
