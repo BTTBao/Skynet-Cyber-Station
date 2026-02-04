@@ -158,17 +158,6 @@ export const BookingService = {
         // 5. Kiểm tra duration hợp lệ
         const durationMinutes = Math.round((endHour - startHour) * 60);
 
-        // Debug: Log để check
-        console.log('🔍 Duration Validation:', {
-            startHour,
-            endHour,
-            duration,
-            calculated: endHour - startHour,
-            durationMinutes,
-            allowedDurations: BookingConfig.ALLOWED_SLOT_DURATIONS,
-            includes: BookingConfig.ALLOWED_SLOT_DURATIONS.includes(durationMinutes)
-        });
-
         if (!BookingConfig.ALLOWED_SLOT_DURATIONS.includes(durationMinutes)) {
             errors.push(BookingConfig.MESSAGES.INVALID_DURATION);
         }

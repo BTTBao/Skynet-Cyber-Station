@@ -46,18 +46,6 @@ export const RoomCalendar = ({
             // selectedRoomId từ dropdown là string, b.roomId từ backend là number
             const isRoomMatch = selectedRoomId === 'all' || b.roomId == selectedRoomId;
 
-            // Debug: Log để kiểm tra
-            if (isSameDate && process.env.NODE_ENV === 'development') {
-                console.log(`Booking filter:`, {
-                    selectedRoomId,
-                    bookingRoomId: b.roomId,
-                    roomIdType: typeof b.roomId,
-                    selectedRoomIdType: typeof selectedRoomId,
-                    isRoomMatch,
-                    status: b.status
-                });
-            }
-
             return isSameDate && isRoomMatch && b.status !== 'REJECTED';
         });
 
