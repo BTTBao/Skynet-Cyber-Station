@@ -18,43 +18,29 @@ namespace Backend.Controllers
 
         // POST: api/RoomBookings
         [HttpPost]
-        // SỬA: Đổi kiểu trả về thành BookingResponseDto cho khớp với biến responseDto bên dưới
-        public async Task<ActionResult<BookingResponseDto>> PostRoomBooking(CreateBookingDto dto)
+        public async Task<IActionResult> PostRoomBooking(CreateBookingDto dto)
         {
-            // 1. Kiểm tra dữ liệu đầu vào
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.UserId == dto.UserId);
+            // 1. Validate & Get Data (Giữ nguyên)
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == dto.UserId);
+            var room = await _context.Rooms.Include(r => r.RoomType).FirstOrDefaultAsync(r => r.RoomId == dto.RoomId);
 
-            var room = await _context.Rooms.FindAsync(dto.RoomId);
+            if (user == null || room == null) return BadRequest(new { message = "Dữ liệu không hợp lệ." });
+            if (dto.StartTime >= dto.EndTime) return BadRequest(new { message = "Thời gian không hợp lệ." });
 
-            if (user == null) return BadRequest(new { message = "Người dùng không tồn tại." });
-            if (room == null) return BadRequest(new { message = "Phòng máy không tồn tại." });
-            if (dto.StartTime >= dto.EndTime) return BadRequest(new { message = "Thời gian kết thúc phải sau thời gian bắt đầu." });
-
-            // 2. Chuyển đổi DateTime sang DateOnly
             DateOnly bookingDateOnly = DateOnly.FromDateTime(dto.BookingDate);
 
-            // 3. Logic kiểm tra trùng lịch
+            // 2. Check trùng lịch (Giữ nguyên)
             var conflictingBooking = await _context.RoomBookings
-                .Where(b => b.RoomId == dto.RoomId
-                         && b.BookingDate == bookingDateOnly
-                         && b.Status != "Rejected"
-                         && b.Status != "Cancelled"
+                .Where(b => b.RoomId == dto.RoomId && b.BookingDate == bookingDateOnly
+                         && b.Status != "Rejected" && b.Status != "Cancelled"
                          && (dto.StartTime < b.EndTime && dto.EndTime > b.StartTime))
                 .FirstOrDefaultAsync();
 
             if (conflictingBooking != null)
-            {
-                return BadRequest(new { message = $"Phòng đã bận từ {conflictingBooking.StartTime:HH:mm} đến {conflictingBooking.EndTime:HH:mm}" });
-            }
+                return BadRequest(new { message = "Phòng đã bận trong khung giờ này." });
 
-            // 4. Xác định trạng thái duyệt
-            bool isLecturer = user.IsTeacher == true ||
-                              (user.Role != null && (user.Role.RoleName == "Lecturer" || user.Role.RoleName == "Giảng viên"));
-            string status = isLecturer ? "Approved" : "Pending";
-
-            // 5. Lưu xuống Database (Lưu Entity gốc)
+            // 3. Tạo Booking
+            bool isLecturer = user.IsTeacher == true || (user.Role?.RoleName == "Lecturer");
             var roomBooking = new RoomBooking
             {
                 UserId = dto.UserId,
@@ -63,38 +49,50 @@ namespace Backend.Controllers
                 Purpose = dto.Purpose,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
-                Status = status,
-                NumberOfPeople = 1
+                Status = isLecturer ? "Approved" : "Pending", // Giảng viên thì duyệt luôn
+                IsUsed = false
             };
 
             _context.RoomBookings.Add(roomBooking);
             await _context.SaveChangesAsync();
 
-            // 6. Map sang DTO để trả về (CẮT ĐỨT VÒNG LẶP JSON TẠI ĐÂY)
-            var responseDto = new BookingResponseDto
+            // 4. TÍNH TIỀN & CỌC (LOGIC MỚI)
+            double durationHours = (dto.EndTime - dto.StartTime).TotalHours;
+            decimal pricePerHour = room.RoomType?.BasePrice ?? 0;
+
+            // Tổng tiền thuê
+            decimal totalAmount = isLecturer ? 0 : (decimal)durationHours * pricePerHour;
+
+            // Tiền cọc = 30% Tổng tiền (Nếu là sinh viên/khách)
+            decimal depositAmount = isLecturer ? 0 : totalAmount * 0.3m;
+
+            var invoice = new Invoice
             {
                 BookingId = roomBooking.BookingId,
-                UserId = roomBooking.UserId,
-                RoomId = roomBooking.RoomId,
-                BookingDate = roomBooking.BookingDate,
-                Purpose = roomBooking.Purpose,
-                StartTime = roomBooking.StartTime,
-                EndTime = roomBooking.EndTime,
-                Status = roomBooking.Status
+                UserId = dto.UserId,
+                TotalAmount = totalAmount,
+                Deposit = depositAmount, // <--- LƯU 30% VÀO ĐÂY
+                Status = isLecturer ? "Paid" : "Unpaid",
+                PaymentDate = isLecturer ? DateTime.Now : null
             };
 
-            // Trả về DTO thay vì Entity
-            return CreatedAtAction("GetRoomBooking", new { id = roomBooking.BookingId }, responseDto);
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetRoomBooking", new { id = roomBooking.BookingId }, new
+            {
+                bookingId = roomBooking.BookingId,
+                invoiceId = invoice.InvoiceId,
+                message = "Đặt phòng thành công"
+            });
         }
 
-        // GET: api/RoomBookings/5
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomBooking>> GetRoomBooking(int id)
         {
-            var roomBooking = await _context.RoomBookings.FindAsync(id);
-            if (roomBooking == null) return NotFound();
-
-            return roomBooking;
+            var booking = await _context.RoomBookings.FindAsync(id);
+            if (booking == null) return NotFound();
+            return booking;
         }
     }
 }
